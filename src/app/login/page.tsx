@@ -97,6 +97,9 @@ export default function LoginPage() {
               Sign up
             </Link>
           </div>
+           <div className="mt-4 text-center text-xs text-muted-foreground">
+            Powered by OR
+          </div>
         </CardContent>
       </Card>
     </div>
