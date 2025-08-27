@@ -1,9 +1,10 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import type { CryptoData } from '@/lib/types';
 import { getMarketData } from '@/services/coingecko';
-import { Card, CardContent, CardTitle, CardHeader } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import ValueTracker from '@/components/value-tracker';
 import ProgressDisplay from '@/components/progress-display';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -78,10 +79,6 @@ export function CryptoDashboard() {
             <ProgressDisplay
               crypto={selectedCrypto}
               setHashSpeed={setHashSpeed}
-              resetAll={() => {
-                setHashSpeed(0.0);
-                setEarnings(0.0);
-              }}
             />
           </>
         )}

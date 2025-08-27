@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { CryptoData } from '@/lib/types';
@@ -5,38 +6,26 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { Gift, Video, RefreshCw } from 'lucide-react';
+import { Gift, Video } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface ProgressDisplayProps {
   crypto: CryptoData;
   setHashSpeed: React.Dispatch<React.SetStateAction<number>>;
-  resetAll: () => void;
 }
 
 const ADS_PER_DAY = 15;
 
-const DAILY_BONUS_HASH_INCREASE = 0.10;
-const AD_BONUS_HASH_INCREASE = 0.02;
+const DAILY_BONUS_HASH_INCREASE = 0.15;
+const AD_BONUS_HASH_INCREASE = 0.01;
 
 const CLAIM_COOLDOWN_SECONDS = 24 * 60 * 60; // 24 hours
 
-export default function ProgressDisplay({ crypto, setHashSpeed, resetAll }: ProgressDisplayProps) {
+export default function ProgressDisplay({ crypto, setHashSpeed }: ProgressDisplayProps) {
   const { toast } = useToast();
   const [claimedBonus, setClaimedBonus] = useState(false);
   const [adsWatched, setAdsWatched] = useState(0);
   const [countdown, setCountdown] = useState(0);
-
-  const resetState = () => {
-    setClaimedBonus(false);
-    setAdsWatched(0);
-    setCountdown(0);
-    resetAll();
-    toast({
-      title: 'Progress Reset',
-      description: 'All your daily earnings and hash speed have been reset.',
-    });
-  }
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -91,9 +80,6 @@ export default function ProgressDisplay({ crypto, setHashSpeed, resetAll }: Prog
       <CardContent className="p-4">
         <div className="flex justify-between items-center">
           <h3 className="text-lg font-bold">Daily Tasks</h3>
-          <Button variant="ghost" size="icon" onClick={resetState}>
-            <RefreshCw className="h-4 w-4" />
-          </Button>
         </div>
         <p className="text-sm text-muted-foreground mt-1">
           Complete daily tasks to increase your mining hash speed.

@@ -13,35 +13,34 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { useRouter, usePathname } from 'next/navigation';
 
 const navItems = [
-  { icon: Home, label: 'Home', active: true },
-  { icon: Users, label: 'Refer' },
+  { icon: Home, label: 'Home', href: '/dashboard' },
+  { icon: Users, label: 'Refer', href: '/referrals' },
   { icon: Wallet, label: 'Wallet' },
   { icon: User, label: 'Profile' },
 ];
 
 export default function BottomNav() {
   const { toast } = useToast();
+  const router = useRouter();
+  const pathname = usePathname();
   const [isWalletOpen, setIsWalletOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [upiAddress, setUpiAddress] = useState('');
   const [amount, setAmount] = useState('');
 
-  const handleNavClick = (label: string) => {
-    if (label === 'Refer') {
-      toast({
-        title: 'Coming Soon!',
-        description: 'The referral feature is under development.',
-      });
-    } else if (label === 'Wallet') {
+  const handleNavClick = (item: (typeof navItems)[0]) => {
+    if (item.href) {
+      router.push(item.href);
+    } else if (item.label === 'Wallet') {
       setIsWalletOpen(true);
-    } else if (label === 'Profile') {
+    } else if (item.label === 'Profile') {
       setIsProfileOpen(true);
     }
   };
@@ -71,9 +70,9 @@ export default function BottomNav() {
           {navItems.map((item) => (
             <button
               key={item.label}
-              onClick={() => handleNavClick(item.label)}
+              onClick={() => handleNavClick(item)}
               className={`flex flex-col items-center justify-center gap-1 w-full ${
-                item.active && item.label === 'Home' ? 'text-primary' : 'text-muted-foreground'
+                pathname === item.href ? 'text-primary' : 'text-muted-foreground'
               }`}
             >
               <item.icon className="h-6 w-6" />
