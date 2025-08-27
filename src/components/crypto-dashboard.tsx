@@ -68,7 +68,7 @@ export function CryptoDashboard() {
   const selectedCrypto = data[selectedCryptoId];
 
   return (
-    <div className="min-h-screen w-full bg-background p-4 md:p-8">
+    <div className="min-h-screen w-full bg-background">
       <div className="space-y-4 max-w-2xl mx-auto">
         {isLoading || !selectedCrypto ? (
           <DashboardSkeleton />
