@@ -17,8 +17,8 @@ interface ProgressDisplayProps {
 
 const ADS_PER_DAY = 44;
 
-const DAILY_BONUS_HASH_INCREASE = 0.15;
-const AD_BONUS_HASH_INCREASE = 0.01;
+const DAILY_BONUS_HASH_INCREASE = 0.01;
+const AD_BONUS_HASH_INCREASE = 0.14;
 
 const CLAIM_COOLDOWN_SECONDS = 24 * 60 * 60; // 24 hours
 
