@@ -9,6 +9,7 @@ import ValueTracker from '@/components/value-tracker';
 import ProgressDisplay from '@/components/progress-display';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Zap } from 'lucide-react';
+import BottomNav from '@/components/bottom-nav';
 
 const MONITORED_COINS = ['bitcoin', 'ethereum', 'dogecoin'];
 
@@ -83,6 +84,7 @@ export function CryptoDashboard() {
           </>
         )}
       </div>
+      <BottomNav />
     </div>
   );
 }
