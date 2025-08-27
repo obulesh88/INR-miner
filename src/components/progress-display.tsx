@@ -15,7 +15,7 @@ interface ProgressDisplayProps {
   initialHashSpeed: number;
 }
 
-const ADS_PER_DAY = 15;
+const ADS_PER_DAY = 44;
 
 const DAILY_BONUS_HASH_INCREASE = 0.15;
 const AD_BONUS_HASH_INCREASE = 0.01;
