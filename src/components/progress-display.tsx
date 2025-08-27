@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 interface ProgressDisplayProps {
   crypto: CryptoData;
   setHashSpeed: React.Dispatch<React.SetStateAction<number>>;
-  initialHashSpeed: number;
+  hashSpeed: number;
 }
 
 const ADS_PER_DAY = 44;
@@ -22,7 +22,7 @@ const AD_BONUS_HASH_INCREASE = 0.14;
 
 const CLAIM_COOLDOWN_SECONDS = 24 * 60 * 60; // 24 hours
 
-export default function ProgressDisplay({ crypto, setHashSpeed, initialHashSpeed }: ProgressDisplayProps) {
+export default function ProgressDisplay({ crypto, setHashSpeed, hashSpeed }: ProgressDisplayProps) {
   const { toast } = useToast();
   
   const [adsWatched, setAdsWatched] = useState(0);
@@ -33,7 +33,6 @@ export default function ProgressDisplay({ crypto, setHashSpeed, initialHashSpeed
   useEffect(() => {
     const savedAdsWatched = localStorage.getItem('adsWatched');
     const savedLastBonusClaimTime = localStorage.getItem('lastBonusClaimTime');
-    const savedHashSpeed = localStorage.getItem('hashSpeed');
 
     if (savedAdsWatched) {
       setAdsWatched(parseInt(savedAdsWatched, 10));
@@ -43,18 +42,21 @@ export default function ProgressDisplay({ crypto, setHashSpeed, initialHashSpeed
         const claimTime = parseInt(savedLastBonusClaimTime, 10);
         const now = Date.now();
         const timePassed = Math.floor((now - claimTime) / 1000);
+        
+        // If the day has passed, reset ads watched
+        const claimDate = new Date(claimTime);
+        const today = new Date();
+        if(claimDate.getDate() !== today.getDate() || claimDate.getMonth() !== today.getMonth() || claimDate.getFullYear() !== today.getFullYear()) {
+            localStorage.setItem('adsWatched', '0');
+            setAdsWatched(0);
+        }
+
         if (timePassed < CLAIM_COOLDOWN_SECONDS) {
             setLastBonusClaimTime(claimTime);
             setCountdown(CLAIM_COOLDOWN_SECONDS - timePassed);
         } else {
             localStorage.removeItem('lastBonusClaimTime');
         }
-    }
-
-    if (savedHashSpeed) {
-      setHashSpeed(parseFloat(savedHashSpeed));
-    } else {
-      setHashSpeed(initialHashSpeed);
     }
   }, []);
 
@@ -63,11 +65,15 @@ export default function ProgressDisplay({ crypto, setHashSpeed, initialHashSpeed
     let timer: NodeJS.Timeout;
     if (lastBonusClaimTime && countdown > 0) {
       timer = setInterval(() => {
-        setCountdown((prev) => prev - 1);
+        setCountdown((prev) => {
+            if (prev <= 1) {
+                localStorage.removeItem('lastBonusClaimTime');
+                setLastBonusClaimTime(null);
+                return 0;
+            }
+            return prev - 1;
+        });
       }, 1000);
-    } else if (countdown <= 0 && lastBonusClaimTime) {
-      setLastBonusClaimTime(null);
-      localStorage.removeItem('lastBonusClaimTime');
     }
     return () => clearInterval(timer);
   }, [lastBonusClaimTime, countdown]);
@@ -76,14 +82,15 @@ export default function ProgressDisplay({ crypto, setHashSpeed, initialHashSpeed
     if (!lastBonusClaimTime) {
       const now = Date.now();
       setLastBonusClaimTime(now);
+      localStorage.setItem('lastBonusClaimTime', now.toString());
       setCountdown(CLAIM_COOLDOWN_SECONDS);
-      const newHashSpeed = initialHashSpeed + DAILY_BONUS_HASH_INCREASE;
+      
       setHashSpeed(prev => {
         const updatedSpeed = prev + DAILY_BONUS_HASH_INCREASE;
         localStorage.setItem('hashSpeed', updatedSpeed.toString());
         return updatedSpeed;
       });
-      localStorage.setItem('lastBonusClaimTime', now.toString());
+      
       toast({
         title: 'Daily Bonus Claimed!',
         description: `You've increased hash speed by ${DAILY_BONUS_HASH_INCREASE.toFixed(2)} H/s.`,
@@ -96,12 +103,14 @@ export default function ProgressDisplay({ crypto, setHashSpeed, initialHashSpeed
       window.open('https://nocturnal-minimum.com/b/3kV.0/PX3wp/vVbTmjVEJHZKDD0s2/NTjSIAzlMHTngX3eL/TBY-2rMZjYMBxCOlDogR', '_blank');
       const newAdsWatched = adsWatched + 1;
       setAdsWatched(newAdsWatched);
+      localStorage.setItem('adsWatched', newAdsWatched.toString());
+      
       setHashSpeed(prev => {
         const updatedSpeed = prev + AD_BONUS_HASH_INCREASE;
         localStorage.setItem('hashSpeed', updatedSpeed.toString());
         return updatedSpeed;
       });
-      localStorage.setItem('adsWatched', newAdsWatched.toString());
+      
       toast({
         title: 'Ad Watched!',
         description: `You've increased hash speed by ${AD_BONUS_HASH_INCREASE.toFixed(2)} H/s. Watched ${newAdsWatched}/${ADS_PER_DAY} ads today.`,

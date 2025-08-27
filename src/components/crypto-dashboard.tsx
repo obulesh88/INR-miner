@@ -42,17 +42,23 @@ export function CryptoDashboard() {
   useEffect(() => {
     fetchData();
     const interval = setInterval(fetchData, 60000); // Update every 60 seconds
-    
+
     const savedEarnings = localStorage.getItem('earnings');
     if (savedEarnings) {
       setEarnings(parseFloat(savedEarnings));
     }
+    
+    const savedHashSpeed = localStorage.getItem('hashSpeed');
+    if (savedHashSpeed) {
+      setHashSpeed(parseFloat(savedHashSpeed));
+    }
+
 
     return () => clearInterval(interval);
   }, [fetchData]);
-  
+
   useEffect(() => {
-    if (hashSpeed > 0) {
+    if (hashSpeed > 0 && data[selectedCryptoId]) {
       const btcPerSecond = 0.00000000005; // Example earning rate
       const interval = setInterval(() => {
         setEarnings(prev => {
@@ -63,12 +69,12 @@ export function CryptoDashboard() {
       }, 1000);
       return () => clearInterval(interval);
     }
-  }, [hashSpeed]);
+  }, [hashSpeed, data, selectedCryptoId]);
 
   const selectedCrypto = data[selectedCryptoId];
 
   return (
-    <div className="min-h-screen w-full bg-background">
+    <div className="min-h-screen w-full bg-background p-4 md:p-8">
       <div className="space-y-4 max-w-2xl mx-auto">
         {isLoading || !selectedCrypto ? (
           <DashboardSkeleton />
@@ -90,7 +96,7 @@ export function CryptoDashboard() {
             <ProgressDisplay
               crypto={selectedCrypto}
               setHashSpeed={setHashSpeed}
-              initialHashSpeed={hashSpeed}
+              hashSpeed={hashSpeed}
             />
           </>
         )}
@@ -102,7 +108,7 @@ export function CryptoDashboard() {
 
 function DashboardSkeleton() {
   return (
-    <>
+    <div className='space-y-4'>
       <Card className="p-6">
         <div className="flex items-center gap-4 mb-4">
             <Skeleton className="h-10 w-10 rounded-full" />
@@ -122,6 +128,6 @@ function DashboardSkeleton() {
         <Skeleton className="h-4 w-full mb-2" />
         <Skeleton className="h-3 w-1/2 mx-auto" />
       </Card>
-    </>
+    </div>
   );
 }
