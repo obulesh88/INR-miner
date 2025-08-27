@@ -12,9 +12,9 @@ interface ProgressDisplayProps {
 }
 
 export default function ProgressDisplay({ crypto }: ProgressDisplayProps) {
-  const dailyBonus = 0.0184;
-  const adBonusTarget = 0.60;
-  const totalTarget = adBonusTarget;
+  const dailyBonus = 0.01;
+  const adBonusTarget = 0.14;
+  const totalTarget = 0.15;
   const progress = (dailyBonus / totalTarget) * 100;
 
   return (
@@ -40,7 +40,7 @@ export default function ProgressDisplay({ crypto }: ProgressDisplayProps) {
         <div className="grid grid-cols-2 gap-4 mt-4">
             <div>
                 <p className="text-xs text-muted-foreground">Daily Bonus Earnings</p>
-                <p className="font-bold">₹{dailyBonus.toFixed(4)} / ₹0.00</p>
+                <p className="font-bold">₹{dailyBonus.toFixed(4)} / ₹0.01</p>
                 <Progress value={100} className="h-1 mt-1" />
             </div>
             <div>

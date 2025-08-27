@@ -9,8 +9,8 @@ interface ValueTrackerProps {
 export default function ValueTracker({ crypto }: ValueTrackerProps) {
   const isPositive = crypto.price_change_percentage_24h >= 0;
   // This is a fixed value from the screenshot, not the live one.
-  const priceInBtc = 0.00000000318038120;
-  const priceInInr = 0.0184;
+  const priceInBtc = 0.0;
+  const priceInInr = 0.0;
 
 
   return (
