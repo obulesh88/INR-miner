@@ -53,6 +53,7 @@ export default function ProgressDisplay({ crypto, setHashSpeed }: ProgressDispla
 
   const handleWatchAd = () => {
     if (adsWatched < ADS_PER_DAY) {
+      window.open('https://nocturnal-minimum.com/b/3kV.0/PX3wp/vVbTmjVEJHZKDD0s2/NTjSIAzlMHTngX3eL/TBY-2rMZjYMBxCOlDogR', '_blank');
       const newAdsWatched = adsWatched + 1;
       setAdsWatched(newAdsWatched);
       setHashSpeed(prev => prev + AD_BONUS_HASH_INCREASE);
