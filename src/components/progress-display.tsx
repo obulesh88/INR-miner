@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 interface ProgressDisplayProps {
   crypto: CryptoData;
   setHashSpeed: React.Dispatch<React.SetStateAction<number>>;
+  initialHashSpeed: number;
 }
 
 const ADS_PER_DAY = 15;
@@ -21,29 +22,68 @@ const AD_BONUS_HASH_INCREASE = 0.01;
 
 const CLAIM_COOLDOWN_SECONDS = 24 * 60 * 60; // 24 hours
 
-export default function ProgressDisplay({ crypto, setHashSpeed }: ProgressDisplayProps) {
+export default function ProgressDisplay({ crypto, setHashSpeed, initialHashSpeed }: ProgressDisplayProps) {
   const { toast } = useToast();
-  const [claimedBonus, setClaimedBonus] = useState(false);
+  
   const [adsWatched, setAdsWatched] = useState(0);
+  const [lastBonusClaimTime, setLastBonusClaimTime] = useState<number | null>(null);
   const [countdown, setCountdown] = useState(0);
 
+  // Load state from localStorage on initial render
+  useEffect(() => {
+    const savedAdsWatched = localStorage.getItem('adsWatched');
+    const savedLastBonusClaimTime = localStorage.getItem('lastBonusClaimTime');
+    const savedHashSpeed = localStorage.getItem('hashSpeed');
+
+    if (savedAdsWatched) {
+      setAdsWatched(parseInt(savedAdsWatched, 10));
+    }
+    
+    if (savedLastBonusClaimTime) {
+        const claimTime = parseInt(savedLastBonusClaimTime, 10);
+        const now = Date.now();
+        const timePassed = Math.floor((now - claimTime) / 1000);
+        if (timePassed < CLAIM_COOLDOWN_SECONDS) {
+            setLastBonusClaimTime(claimTime);
+            setCountdown(CLAIM_COOLDOWN_SECONDS - timePassed);
+        } else {
+            localStorage.removeItem('lastBonusClaimTime');
+        }
+    }
+
+    if (savedHashSpeed) {
+      setHashSpeed(parseFloat(savedHashSpeed));
+    } else {
+      setHashSpeed(initialHashSpeed);
+    }
+  }, []);
+
+  // Countdown timer effect
   useEffect(() => {
     let timer: NodeJS.Timeout;
-    if (claimedBonus && countdown > 0) {
+    if (lastBonusClaimTime && countdown > 0) {
       timer = setInterval(() => {
         setCountdown((prev) => prev - 1);
       }, 1000);
-    } else if (countdown <= 0 && claimedBonus) {
-      setClaimedBonus(false);
+    } else if (countdown <= 0 && lastBonusClaimTime) {
+      setLastBonusClaimTime(null);
+      localStorage.removeItem('lastBonusClaimTime');
     }
     return () => clearInterval(timer);
-  }, [claimedBonus, countdown]);
+  }, [lastBonusClaimTime, countdown]);
 
   const handleClaimBonus = () => {
-    if (!claimedBonus) {
-      setClaimedBonus(true);
+    if (!lastBonusClaimTime) {
+      const now = Date.now();
+      setLastBonusClaimTime(now);
       setCountdown(CLAIM_COOLDOWN_SECONDS);
-      setHashSpeed(prev => prev + DAILY_BONUS_HASH_INCREASE);
+      const newHashSpeed = initialHashSpeed + DAILY_BONUS_HASH_INCREASE;
+      setHashSpeed(prev => {
+        const updatedSpeed = prev + DAILY_BONUS_HASH_INCREASE;
+        localStorage.setItem('hashSpeed', updatedSpeed.toString());
+        return updatedSpeed;
+      });
+      localStorage.setItem('lastBonusClaimTime', now.toString());
       toast({
         title: 'Daily Bonus Claimed!',
         description: `You've increased hash speed by ${DAILY_BONUS_HASH_INCREASE.toFixed(2)} H/s.`,
@@ -56,7 +96,12 @@ export default function ProgressDisplay({ crypto, setHashSpeed }: ProgressDispla
       window.open('https://nocturnal-minimum.com/b/3kV.0/PX3wp/vVbTmjVEJHZKDD0s2/NTjSIAzlMHTngX3eL/TBY-2rMZjYMBxCOlDogR', '_blank');
       const newAdsWatched = adsWatched + 1;
       setAdsWatched(newAdsWatched);
-      setHashSpeed(prev => prev + AD_BONUS_HASH_INCREASE);
+      setHashSpeed(prev => {
+        const updatedSpeed = prev + AD_BONUS_HASH_INCREASE;
+        localStorage.setItem('hashSpeed', updatedSpeed.toString());
+        return updatedSpeed;
+      });
+      localStorage.setItem('adsWatched', newAdsWatched.toString());
       toast({
         title: 'Ad Watched!',
         description: `You've increased hash speed by ${AD_BONUS_HASH_INCREASE.toFixed(2)} H/s. Watched ${newAdsWatched}/${ADS_PER_DAY} ads today.`,
@@ -73,7 +118,7 @@ export default function ProgressDisplay({ crypto, setHashSpeed }: ProgressDispla
 
   const isAdBonusMaxed = adsWatched >= ADS_PER_DAY;
   
-  const dailyBonusProgress = claimedBonus ? 100 : 0;
+  const dailyBonusProgress = lastBonusClaimTime ? 100 : 0;
   const adBonusProgress = (adsWatched / ADS_PER_DAY) * 100;
   
   return (
@@ -100,9 +145,9 @@ export default function ProgressDisplay({ crypto, setHashSpeed }: ProgressDispla
         </div>
 
         <div className="flex flex-col gap-3 mt-6">
-          <Button onClick={handleClaimBonus} disabled={claimedBonus}>
+          <Button onClick={handleClaimBonus} disabled={!!lastBonusClaimTime}>
             <Gift className="mr-2 h-4 w-4" />
-            {claimedBonus
+            {lastBonusClaimTime
               ? `Next Claim in ${formatCountdown(countdown)}`
               : 'Claim Daily Bonus'}
           </Button>

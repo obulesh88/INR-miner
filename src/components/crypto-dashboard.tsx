@@ -42,6 +42,12 @@ export function CryptoDashboard() {
   useEffect(() => {
     fetchData();
     const interval = setInterval(fetchData, 60000); // Update every 60 seconds
+    
+    const savedEarnings = localStorage.getItem('earnings');
+    if (savedEarnings) {
+      setEarnings(parseFloat(savedEarnings));
+    }
+
     return () => clearInterval(interval);
   }, [fetchData]);
   
@@ -49,7 +55,11 @@ export function CryptoDashboard() {
     if (hashSpeed > 0) {
       const btcPerSecond = 0.00000000005; // Example earning rate
       const interval = setInterval(() => {
-        setEarnings(prev => prev + btcPerSecond * hashSpeed);
+        setEarnings(prev => {
+          const newEarnings = prev + btcPerSecond * hashSpeed;
+          localStorage.setItem('earnings', newEarnings.toString());
+          return newEarnings;
+        });
       }, 1000);
       return () => clearInterval(interval);
     }
@@ -80,6 +90,7 @@ export function CryptoDashboard() {
             <ProgressDisplay
               crypto={selectedCrypto}
               setHashSpeed={setHashSpeed}
+              initialHashSpeed={hashSpeed}
             />
           </>
         )}
