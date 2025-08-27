@@ -1,3 +1,9 @@
+import { CryptoDashboard } from '@/components/crypto-dashboard';
+
 export default function Home() {
-  return <></>;
+  return (
+    <main>
+      <CryptoDashboard />
+    </main>
+  );
 }
