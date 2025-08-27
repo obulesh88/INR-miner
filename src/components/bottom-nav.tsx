@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Home, Users, Wallet, User, Mail } from 'lucide-react';
 import {
   AlertDialog,
@@ -13,6 +13,9 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useRouter, usePathname } from 'next/navigation';
+import { auth } from '@/lib/firebase';
+import type { User as FirebaseUser } from 'firebase/auth';
+import { Skeleton } from './ui/skeleton';
 
 const navItems = [
   { icon: Home, label: 'Home', href: '/dashboard' },
@@ -25,6 +28,16 @@ export default function BottomNav() {
   const router = useRouter();
   const pathname = usePathname();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      setCurrentUser(user);
+      setIsLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
 
   const handleNavClick = (item: (typeof navItems)[0]) => {
     if (item.href) {
@@ -65,7 +78,13 @@ export default function BottomNav() {
           </AlertDialogHeader>
           <div className="flex items-center gap-3 bg-secondary p-3 rounded-md">
             <Mail className="h-5 w-5 text-primary"/>
-            <p className="text-sm font-medium">user@example.com</p>
+             {isLoading ? (
+              <Skeleton className="h-5 w-40" />
+            ) : currentUser ? (
+              <p className="text-sm font-medium">{currentUser.email}</p>
+            ) : (
+              <p className="text-sm font-medium text-muted-foreground">Not logged in</p>
+            )}
           </div>
           <AlertDialogFooter>
             <AlertDialogAction onClick={() => setIsProfileOpen(false)}>
