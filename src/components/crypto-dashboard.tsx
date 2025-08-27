@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { CryptoData } from '@/lib/types';
 import { getMarketData } from '@/services/coingecko';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import ValueTracker from '@/components/value-tracker';
 import ProgressDisplay from '@/components/progress-display';
 import AiAssistant from '@/components/ai-assistant';
