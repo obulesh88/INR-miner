@@ -10,6 +10,7 @@ import AiAssistant from '@/components/ai-assistant';
 import NewsFeed from '@/components/news-feed';
 import CryptoSelector from '@/components/crypto-selector';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Zap } from 'lucide-react';
 
 const MONITORED_COINS = ['bitcoin', 'ethereum', 'dogecoin'];
 
@@ -47,30 +48,42 @@ export function CryptoDashboard() {
 
   return (
     <div className="min-h-screen w-full bg-background p-4 md:p-8">
-      <div className="grid grid-cols-1 lg:grid-cols-3 lg:gap-8 space-y-8 lg:space-y-0">
-        <div className="lg:col-span-2 flex flex-col gap-8">
-          {isLoading || !selectedCrypto ? (
-            <DashboardSkeleton />
-          ) : (
-            <>
-              <ValueTracker crypto={selectedCrypto} />
-              <ProgressDisplay crypto={selectedCrypto} />
-              <AiAssistant
-                selectedCryptoSymbol={selectedCrypto.symbol}
-                selectedCryptoName={selectedCrypto.name}
-              />
-            </>
-          )}
-        </div>
-        <div className="lg:col-span-1 flex flex-col gap-8">
-          <CryptoSelector
-            cryptos={Object.values(data)}
-            selectedCryptoId={selectedCryptoId}
-            onSelect={setSelectedCryptoId}
-            isLoading={isLoading}
-          />
-          <NewsFeed />
-        </div>
+      <div className="space-y-4 max-w-2xl mx-auto">
+        {isLoading || !selectedCrypto ? (
+          <DashboardSkeleton />
+        ) : (
+          <>
+            <ValueTracker crypto={selectedCrypto} />
+            
+            <Card>
+              <CardContent className="p-4">
+                <p className="text-sm text-muted-foreground mb-1">Active Mining Power</p>
+                <div className="flex items-center gap-2">
+                  <Zap className="h-6 w-6 text-primary" />
+                  <p className="text-2xl font-bold">0.20 H/s</p>
+                </div>
+                <p className="text-sm text-muted-foreground mt-1">Actively generating BTC</p>
+              </CardContent>
+            </Card>
+
+            <ProgressDisplay crypto={selectedCrypto} />
+            
+            {/* The following components are hidden to match the screenshot, can be re-enabled if needed */}
+            {/* 
+            <AiAssistant
+              selectedCryptoSymbol={selectedCrypto.symbol}
+              selectedCryptoName={selectedCrypto.name}
+            />
+            <CryptoSelector
+              cryptos={Object.values(data)}
+              selectedCryptoId={selectedCryptoId}
+              onSelect={setSelectedCryptoId}
+              isLoading={isLoading}
+            />
+            <NewsFeed /> 
+            */}
+          </>
+        )}
       </div>
     </div>
   );
@@ -79,21 +92,24 @@ export function CryptoDashboard() {
 function DashboardSkeleton() {
   return (
     <>
-      <Card className="p-6 flex justify-between items-start">
-        <div>
-          <Skeleton className="h-8 w-48 mb-2" />
-          <Skeleton className="h-12 w-64" />
+      <Card className="p-6">
+        <div className="flex items-center gap-4 mb-4">
+            <Skeleton className="h-10 w-10 rounded-full" />
+            <div>
+                <Skeleton className="h-7 w-32 mb-1" />
+                <Skeleton className="h-4 w-12" />
+            </div>
         </div>
-        <Skeleton className="h-10 w-32" />
+        <Skeleton className="h-12 w-48" />
       </Card>
       <Card className="p-6">
+        <Skeleton className="h-4 w-40 mb-2" />
+        <Skeleton className="h-8 w-24" />
+      </Card>
+       <Card className="p-6">
         <Skeleton className="h-6 w-40 mb-4" />
-        <Skeleton className="h-4 w-full" />
-      </Card>
-      <Card className="p-6">
-        <Skeleton className="h-6 w-32 mb-4" />
-        <Skeleton className="h-24 w-full mb-4" />
-        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-4 w-full mb-2" />
+        <Skeleton className="h-3 w-1/2 mx-auto" />
       </Card>
     </>
   );
