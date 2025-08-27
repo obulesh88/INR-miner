@@ -3,12 +3,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { CryptoData } from '@/lib/types';
 import { getMarketData } from '@/services/coingecko';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardTitle, CardHeader } from '@/components/ui/card';
 import ValueTracker from '@/components/value-tracker';
 import ProgressDisplay from '@/components/progress-display';
-import AiAssistant from '@/components/ai-assistant';
-import NewsFeed from '@/components/news-feed';
-import CryptoSelector from '@/components/crypto-selector';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Zap } from 'lucide-react';
 
@@ -20,6 +17,8 @@ export function CryptoDashboard() {
     MONITORED_COINS[0]
   );
   const [isLoading, setIsLoading] = useState(true);
+  const [hashSpeed, setHashSpeed] = useState(0.0);
+  const [earnings, setEarnings] = useState(0.0);
 
   const fetchData = useCallback(async () => {
     try {
@@ -43,6 +42,16 @@ export function CryptoDashboard() {
     const interval = setInterval(fetchData, 60000); // Update every 60 seconds
     return () => clearInterval(interval);
   }, [fetchData]);
+  
+  useEffect(() => {
+    if (hashSpeed > 0) {
+      const btcPerSecond = 0.00000000005; // Example earning rate
+      const interval = setInterval(() => {
+        setEarnings(prev => prev + btcPerSecond * hashSpeed);
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [hashSpeed]);
 
   const selectedCrypto = data[selectedCryptoId];
 
@@ -53,35 +62,27 @@ export function CryptoDashboard() {
           <DashboardSkeleton />
         ) : (
           <>
-            <ValueTracker crypto={selectedCrypto} />
+            <ValueTracker crypto={selectedCrypto} earnings={earnings} />
             
             <Card>
               <CardContent className="p-4">
                 <p className="text-sm text-muted-foreground mb-1">Active Mining Power</p>
                 <div className="flex items-center gap-2">
                   <Zap className="h-6 w-6 text-primary" />
-                  <p className="text-2xl font-bold">0.20 H/s</p>
+                  <p className="text-2xl font-bold">{hashSpeed.toFixed(2)} H/s</p>
                 </div>
-                <p className="text-sm text-muted-foreground mt-1">Actively generating BTC</p>
+                <p className="text-sm text-muted-foreground mt-1">Actively generating {selectedCrypto.symbol.toUpperCase()}</p>
               </CardContent>
             </Card>
 
-            <ProgressDisplay crypto={selectedCrypto} />
-            
-            {/* The following components are hidden to match the screenshot, can be re-enabled if needed */}
-            {/* 
-            <AiAssistant
-              selectedCryptoSymbol={selectedCrypto.symbol}
-              selectedCryptoName={selectedCrypto.name}
+            <ProgressDisplay
+              crypto={selectedCrypto}
+              setHashSpeed={setHashSpeed}
+              resetAll={() => {
+                setHashSpeed(0.0);
+                setEarnings(0.0);
+              }}
             />
-            <CryptoSelector
-              cryptos={Object.values(data)}
-              selectedCryptoId={selectedCryptoId}
-              onSelect={setSelectedCryptoId}
-              isLoading={isLoading}
-            />
-            <NewsFeed /> 
-            */}
           </>
         )}
       </div>

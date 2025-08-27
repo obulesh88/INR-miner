@@ -4,14 +4,13 @@ import CryptoIcon from '@/components/crypto-icon';
 
 interface ValueTrackerProps {
   crypto: CryptoData;
+  earnings: number;
 }
 
-export default function ValueTracker({ crypto }: ValueTrackerProps) {
+export default function ValueTracker({ crypto, earnings }: ValueTrackerProps) {
   const isPositive = crypto.price_change_percentage_24h >= 0;
-  // This is a fixed value from the screenshot, not the live one.
-  const priceInBtc = 0.0;
-  const priceInInr = 0.0;
-
+  
+  const priceInInr = earnings * crypto.current_price * 83.5; // Assuming 1 USD = 83.5 INR
 
   return (
     <Card>
@@ -20,7 +19,7 @@ export default function ValueTracker({ crypto }: ValueTrackerProps) {
         <div className="flex items-center gap-2">
           <CryptoIcon symbol={crypto.symbol} className="h-8 w-8" />
           <div className="text-3xl font-bold text-primary">
-            {priceInBtc.toFixed(17)}
+            {earnings.toFixed(17)}
           </div>
           <p className="text-3xl font-bold">
             {crypto.symbol.toUpperCase()}

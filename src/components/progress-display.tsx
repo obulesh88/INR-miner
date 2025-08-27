@@ -5,26 +5,44 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { Gift, Video } from 'lucide-react';
+import { Gift, Video, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface ProgressDisplayProps {
   crypto: CryptoData;
+  setHashSpeed: React.Dispatch<React.SetStateAction<number>>;
+  resetAll: () => void;
 }
 
-const DAILY_BONUS = 0.01;
-const AD_BONUS_TARGET = 0.14;
-const TOTAL_TARGET = 0.15;
+const DAILY_BONUS_INR = 0.01;
+const AD_BONUS_INR_TARGET = 0.14;
+const TOTAL_INR_TARGET = DAILY_BONUS_INR + AD_BONUS_INR_TARGET;
 const ADS_PER_DAY = 15;
-const AD_BONUS_PER_AD = AD_BONUS_TARGET / ADS_PER_DAY;
+const AD_BONUS_PER_AD_INR = AD_BONUS_INR_TARGET / ADS_PER_DAY;
+
+const DAILY_BONUS_HASH_INCREASE = 0.10;
+const AD_BONUS_HASH_INCREASE = 0.02;
+
 const CLAIM_COOLDOWN_SECONDS = 24 * 60 * 60; // 24 hours
 
-export default function ProgressDisplay({ crypto }: ProgressDisplayProps) {
+export default function ProgressDisplay({ crypto, setHashSpeed, resetAll }: ProgressDisplayProps) {
   const { toast } = useToast();
-  const [claimedBonus, setClaimedBonus] = useState(true);
-  const [adEarnings, setAdEarnings] = useState(0);
+  const [claimedBonus, setClaimedBonus] = useState(false);
+  const [inrEarnings, setInrEarnings] = useState(0);
   const [adsWatched, setAdsWatched] = useState(0);
-  const [countdown, setCountdown] = useState(26 * 60 + 23); // 26m 23s from screenshot
+  const [countdown, setCountdown] = useState(0);
+
+  const resetState = () => {
+    setClaimedBonus(false);
+    setInrEarnings(0);
+    setAdsWatched(0);
+    setCountdown(0);
+    resetAll();
+    toast({
+      title: 'Progress Reset',
+      description: 'All your daily earnings and hash speed have been reset.',
+    });
+  }
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -32,7 +50,7 @@ export default function ProgressDisplay({ crypto }: ProgressDisplayProps) {
       timer = setInterval(() => {
         setCountdown((prev) => prev - 1);
       }, 1000);
-    } else if (countdown <= 0) {
+    } else if (countdown <= 0 && claimedBonus) {
       setClaimedBonus(false);
     }
     return () => clearInterval(timer);
@@ -42,9 +60,11 @@ export default function ProgressDisplay({ crypto }: ProgressDisplayProps) {
     if (!claimedBonus) {
       setClaimedBonus(true);
       setCountdown(CLAIM_COOLDOWN_SECONDS);
+      setHashSpeed(prev => prev + DAILY_BONUS_HASH_INCREASE);
+      setInrEarnings(prev => prev + DAILY_BONUS_INR);
       toast({
         title: 'Daily Bonus Claimed!',
-        description: `You've earned ₹${DAILY_BONUS.toFixed(2)}.`,
+        description: `You've earned ₹${DAILY_BONUS_INR.toFixed(2)} and increased hash speed.`,
       });
     }
   };
@@ -53,16 +73,16 @@ export default function ProgressDisplay({ crypto }: ProgressDisplayProps) {
     if (adsWatched < ADS_PER_DAY) {
       const newAdsWatched = adsWatched + 1;
       setAdsWatched(newAdsWatched);
-      setAdEarnings((prev) => prev + AD_BONUS_PER_AD);
+      setHashSpeed(prev => prev + AD_BONUS_HASH_INCREASE);
+      setInrEarnings(prev => prev + AD_BONUS_PER_AD_INR);
       toast({
         title: 'Ad Watched!',
-        description: `You earned ₹${AD_BONUS_PER_AD.toFixed(4)}. Watched ${newAdsWatched}/${ADS_PER_DAY} ads today.`,
+        description: `You earned ₹${AD_BONUS_PER_AD_INR.toFixed(4)} and increased hash speed. Watched ${newAdsWatched}/${ADS_PER_DAY} ads today.`,
       });
     }
   };
   
-  const totalEarnings = (claimedBonus ? DAILY_BONUS : 0) + adEarnings;
-  const progress = (totalEarnings / TOTAL_TARGET) * 100;
+  const progress = (inrEarnings / TOTAL_INR_TARGET) * 100;
 
   const formatCountdown = (seconds: number) => {
     const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
@@ -72,11 +92,22 @@ export default function ProgressDisplay({ crypto }: ProgressDisplayProps) {
   };
 
   const isAdBonusMaxed = adsWatched >= ADS_PER_DAY;
+  
+  const dailyBonusProgress = claimedBonus ? 100 : 0;
+  const adBonusProgress = (adsWatched / ADS_PER_DAY) * 100;
+  const dailyBonusEarned = claimedBonus ? DAILY_BONUS_INR : 0;
+  const adBonusEarned = adsWatched * AD_BONUS_PER_AD_INR;
+
 
   return (
     <Card>
       <CardContent className="p-4">
-        <h3 className="text-lg font-bold">Daily Progress</h3>
+        <div className="flex justify-between items-center">
+          <h3 className="text-lg font-bold">Daily Progress</h3>
+          <Button variant="ghost" size="icon" onClick={resetState}>
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+        </div>
         <p className="text-sm text-muted-foreground mt-1">
           Your daily earnings are split. Claim the daily bonus, then watch ads
           to earn the rest.
@@ -85,12 +116,12 @@ export default function ProgressDisplay({ crypto }: ProgressDisplayProps) {
         <div className="mt-4">
           <div className="flex justify-between items-center mb-1">
             <p className="text-sm text-muted-foreground">
-              Total Progress (Target: ₹{TOTAL_TARGET.toFixed(2)})
+              Total Progress (Target: ₹{TOTAL_INR_TARGET.toFixed(2)})
             </p>
           </div>
           <Progress value={progress} className="h-2" />
           <p className="text-sm text-primary font-bold text-center mt-2">
-            {progress.toFixed(2)}% Complete
+            ₹{inrEarnings.toFixed(4)} / ₹{TOTAL_INR_TARGET.toFixed(2)}
           </p>
         </div>
 
@@ -98,18 +129,18 @@ export default function ProgressDisplay({ crypto }: ProgressDisplayProps) {
           <div>
             <p className="text-xs text-muted-foreground">Daily Bonus Earnings</p>
             <p className="font-bold">
-              ₹{claimedBonus ? DAILY_BONUS.toFixed(4) : '0.0000'} / ₹{DAILY_BONUS.toFixed(2)}
+              ₹{dailyBonusEarned.toFixed(4)} / ₹{DAILY_BONUS_INR.toFixed(2)}
             </p>
-            <Progress value={claimedBonus ? 100 : 0} className="h-1 mt-1" />
+            <Progress value={dailyBonusProgress} className="h-1 mt-1" />
           </div>
           <div>
             <p className="text-xs text-muted-foreground">
               Ad Bonus Earnings ({adsWatched}/{ADS_PER_DAY})
             </p>
             <p className="font-bold">
-              ₹{adEarnings.toFixed(4)} / ₹{AD_BONUS_TARGET.toFixed(2)}
+              ₹{adBonusEarned.toFixed(4)} / ₹{AD_BONUS_INR_TARGET.toFixed(2)}
             </p>
-            <Progress value={(adEarnings / AD_BONUS_TARGET) * 100} className="h-1 mt-1" />
+            <Progress value={adBonusProgress} className="h-1 mt-1" />
           </div>
         </div>
 
