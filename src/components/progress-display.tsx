@@ -15,8 +15,6 @@ interface ProgressDisplayProps {
   hashSpeed: number;
 }
 
-const ADS_PER_DAY = 44;
-
 const DAILY_BONUS_HASH_INCREASE = 0.01;
 const AD_BONUS_HASH_INCREASE = 0.14;
 
@@ -99,23 +97,21 @@ export default function ProgressDisplay({ crypto, setHashSpeed, hashSpeed }: Pro
   };
 
   const handleWatchAd = () => {
-    if (adsWatched < ADS_PER_DAY) {
-      window.open('https://nocturnal-minimum.com/b/3kV.0/PX3wp/vVbTmjVEJHZKDD0s2/NTjSIAzlMHTngX3eL/TBY-2rMZjYMBxCOlDogR', '_blank');
-      const newAdsWatched = adsWatched + 1;
-      setAdsWatched(newAdsWatched);
-      localStorage.setItem('adsWatched', newAdsWatched.toString());
-      
-      setHashSpeed(prev => {
-        const updatedSpeed = prev + AD_BONUS_HASH_INCREASE;
-        localStorage.setItem('hashSpeed', updatedSpeed.toString());
-        return updatedSpeed;
-      });
-      
-      toast({
-        title: 'Ad Watched!',
-        description: `You've increased hash speed by ${AD_BONUS_HASH_INCREASE.toFixed(2)} H/s. Watched ${newAdsWatched}/${ADS_PER_DAY} ads today.`,
-      });
-    }
+    window.open('https://nocturnal-minimum.com/b/3kV.0/PX3wp/vVbTmjVEJHZKDD0s2/NTjSIAzlMHTngX3eL/TBY-2rMZjYMBxCOlDogR', '_blank');
+    const newAdsWatched = adsWatched + 1;
+    setAdsWatched(newAdsWatched);
+    localStorage.setItem('adsWatched', newAdsWatched.toString());
+    
+    setHashSpeed(prev => {
+      const updatedSpeed = prev + AD_BONUS_HASH_INCREASE;
+      localStorage.setItem('hashSpeed', updatedSpeed.toString());
+      return updatedSpeed;
+    });
+    
+    toast({
+      title: 'Ad Watched!',
+      description: `You've increased hash speed by ${AD_BONUS_HASH_INCREASE.toFixed(2)} H/s. Watched ${newAdsWatched} ads today.`,
+    });
   };
   
   const formatCountdown = (seconds: number) => {
@@ -124,11 +120,8 @@ export default function ProgressDisplay({ crypto, setHashSpeed, hashSpeed }: Pro
     const s = (seconds % 60).toString().padStart(2, '0');
     return `${h}:${m}:${s}`;
   };
-
-  const isAdBonusMaxed = adsWatched >= ADS_PER_DAY;
   
   const dailyBonusProgress = lastBonusClaimTime ? 100 : 0;
-  const adBonusProgress = (adsWatched / ADS_PER_DAY) * 100;
   
   return (
     <Card>
@@ -147,9 +140,8 @@ export default function ProgressDisplay({ crypto, setHashSpeed, hashSpeed }: Pro
           </div>
           <div>
             <p className="text-xs text-muted-foreground">
-              Ad Bonus ({adsWatched}/{ADS_PER_DAY})
+              Ads Watched Today: {adsWatched}
             </p>
-            <Progress value={adBonusProgress} className="h-1 mt-1" />
           </div>
         </div>
 
@@ -160,9 +152,9 @@ export default function ProgressDisplay({ crypto, setHashSpeed, hashSpeed }: Pro
               ? `Next Claim in ${formatCountdown(countdown)}`
               : 'Claim Daily Bonus'}
           </Button>
-          <Button onClick={handleWatchAd} disabled={isAdBonusMaxed}>
+          <Button onClick={handleWatchAd}>
             <Video className="mr-2 h-4 w-4" />
-            {isAdBonusMaxed ? 'Ad Limit Reached' : 'Watch Ad for Bonus'}
+            Watch Ad for Bonus
           </Button>
         </div>
       </CardContent>
