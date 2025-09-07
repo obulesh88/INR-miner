@@ -18,7 +18,7 @@ interface ProgressDisplayProps {
   adsWatched: number;
   setAdsWatched: React.Dispatch<React.SetStateAction<number>>;
   lastBonusClaimTime: number | null;
-  setLastBonusClaimTime: React.Dispatch<React.SetStateAction<number | null>>;
+  setLastBonusClaimTime: (time: number | null) => void;
 }
 
 const DAILY_BONUS_HASH_INCREASE = 0.02;

@@ -108,6 +108,14 @@ export function CryptoDashboard() {
 
   }, [user, hashSpeed, earnings, lastBonusClaimTime, adsWatched, lastAdResetDate]);
 
+  const saveClaimTime = useCallback((time: number) => {
+      if (!user) return;
+      setLastBonusClaimTime(time);
+      const userData = { lastBonusClaimTime: time };
+      localStorage.setItem(`userData-${user.uid}`, JSON.stringify({ ...JSON.parse(localStorage.getItem(`userData-${user.uid}`) || '{}'), ...userData }));
+      updateUserData(user.uid, userData);
+  }, [user]);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -174,7 +182,7 @@ export function CryptoDashboard() {
               adsWatched={adsWatched}
               setAdsWatched={setAdsWatched}
               lastBonusClaimTime={lastBonusClaimTime}
-              setLastBonusClaimTime={setLastBonusClaimTime}
+              setLastBonusClaimTime={saveClaimTime}
             />
           </>
         )}
