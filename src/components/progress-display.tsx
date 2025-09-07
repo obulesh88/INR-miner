@@ -18,8 +18,8 @@ interface ProgressDisplayProps {
   hashSpeed: number;
 }
 
-const DAILY_BONUS_HASH_INCREASE = 0.01;
-const AD_BONUS_HASH_INCREASE = 0.14;
+const DAILY_BONUS_HASH_INCREASE = 0.02;
+const AD_BONUS_HASH_INCREASE = 0.02;
 const MAX_ADS_WATCHED = 44;
 
 const CLAIM_COOLDOWN_SECONDS = 24 * 60 * 60; // 24 hours
