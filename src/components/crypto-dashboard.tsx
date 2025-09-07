@@ -53,27 +53,23 @@ export function CryptoDashboard() {
   }, []);
 
   const loadUserData = useCallback(async (currentUser: User) => {
-    let dataToSet: UserData | null = null;
-    const localDataStr = localStorage.getItem(`userData-${currentUser.uid}`);
-    if (localDataStr) {
-        dataToSet = JSON.parse(localDataStr);
-    }
-
     const firebaseData = await getUserData(currentUser.uid);
+    
+    let dataToSet: UserData;
+
     if (firebaseData) {
         dataToSet = firebaseData;
-    }
-
-    if (dataToSet) {
-      setUserData(dataToSet);
     } else {
         const newUserData: UserData = {
             ...initialUserData,
             lastAdResetDate: new Date().toISOString().split('T')[0]
         };
         await createUserData(currentUser.uid, newUserData);
-        setUserData(newUserData);
+        dataToSet = newUserData;
     }
+    
+    setUserData(dataToSet);
+    localStorage.setItem(`userData-${currentUser.uid}`, JSON.stringify(dataToSet));
   }, []);
   
   const saveUserData = useCallback((dataToSave: UserData) => {
