@@ -43,17 +43,6 @@ export function CryptoDashboard() {
     fetchData();
     const interval = setInterval(fetchData, 60000); // Update every 60 seconds
 
-    const savedEarnings = localStorage.getItem('earnings');
-    if (savedEarnings) {
-      setEarnings(parseFloat(savedEarnings));
-    }
-    
-    const savedHashSpeed = localStorage.getItem('hashSpeed');
-    if (savedHashSpeed) {
-      setHashSpeed(parseFloat(savedHashSpeed));
-    }
-
-
     return () => clearInterval(interval);
   }, [fetchData]);
 
@@ -63,7 +52,6 @@ export function CryptoDashboard() {
       const interval = setInterval(() => {
         setEarnings(prev => {
           const newEarnings = prev + btcPerSecond * hashSpeed;
-          localStorage.setItem('earnings', newEarnings.toString());
           return newEarnings;
         });
       }, 1000);

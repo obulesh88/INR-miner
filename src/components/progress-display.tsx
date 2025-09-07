@@ -34,31 +34,16 @@ export default function ProgressDisplay({ crypto, setHashSpeed, hashSpeed }: Pro
 
   // Load state from localStorage on initial render
   useEffect(() => {
-    const savedAdsWatched = localStorage.getItem('adsWatched');
     const savedLastBonusClaimTime = localStorage.getItem('lastBonusClaimTime');
-
-    if (savedAdsWatched) {
-      setAdsWatched(parseInt(savedAdsWatched, 10));
-    }
     
     if (savedLastBonusClaimTime) {
         const claimTime = parseInt(savedLastBonusClaimTime, 10);
         const now = Date.now();
         const timePassed = Math.floor((now - claimTime) / 1000);
-        
-        // If the day has passed, reset ads watched
-        const claimDate = new Date(claimTime);
-        const today = new Date();
-        if(claimDate.getDate() !== today.getDate() || claimDate.getMonth() !== today.getMonth() || claimDate.getFullYear() !== today.getFullYear()) {
-            localStorage.setItem('adsWatched', '0');
-            setAdsWatched(0);
-        }
 
         if (timePassed < CLAIM_COOLDOWN_SECONDS) {
             setLastBonusClaimTime(claimTime);
             setCountdown(CLAIM_COOLDOWN_SECONDS - timePassed);
-        } else {
-            localStorage.removeItem('lastBonusClaimTime');
         }
     }
   }, []);
@@ -70,7 +55,6 @@ export default function ProgressDisplay({ crypto, setHashSpeed, hashSpeed }: Pro
       timer = setInterval(() => {
         setCountdown((prev) => {
             if (prev <= 1) {
-                localStorage.removeItem('lastBonusClaimTime');
                 setLastBonusClaimTime(null);
                 return 0;
             }
@@ -89,14 +73,9 @@ export default function ProgressDisplay({ crypto, setHashSpeed, hashSpeed }: Pro
     if (!lastBonusClaimTime) {
       const now = Date.now();
       setLastBonusClaimTime(now);
-      localStorage.setItem('lastBonusClaimTime', now.toString());
       setCountdown(CLAIM_COOLDOWN_SECONDS);
       
-      setHashSpeed(prev => {
-        const updatedSpeed = prev + DAILY_BONUS_HASH_INCREASE;
-        localStorage.setItem('hashSpeed', updatedSpeed.toString());
-        return updatedSpeed;
-      });
+      setHashSpeed(prev => prev + DAILY_BONUS_HASH_INCREASE);
       
       toast({
         title: 'Daily Bonus Claimed!',
@@ -117,13 +96,8 @@ export default function ProgressDisplay({ crypto, setHashSpeed, hashSpeed }: Pro
     
     const newAdsWatched = adsWatched + 1;
     setAdsWatched(newAdsWatched);
-    localStorage.setItem('adsWatched', newAdsWatched.toString());
     
-    setHashSpeed(prev => {
-      const updatedSpeed = prev + AD_BONUS_HASH_INCREASE;
-      localStorage.setItem('hashSpeed', updatedSpeed.toString());
-      return updatedSpeed;
-    });
+    setHashSpeed(prev => prev + AD_BONUS_HASH_INCREASE);
     
     toast({
       title: 'Ad Watched!',
