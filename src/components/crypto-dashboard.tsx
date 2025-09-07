@@ -10,6 +10,9 @@ import ProgressDisplay from '@/components/progress-display';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Zap } from 'lucide-react';
 import BottomNav from '@/components/bottom-nav';
+import { auth } from '@/lib/firebase';
+import { getUserData, createUserData, updateUserData, type UserData } from '@/services/userData';
+import { onAuthStateChanged, type User } from 'firebase/auth';
 
 const MONITORED_COINS = ['bitcoin', 'ethereum', 'dogecoin'];
 
@@ -19,10 +22,17 @@ export function CryptoDashboard() {
     MONITORED_COINS[0]
   );
   const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
+
+  // User progress state
   const [hashSpeed, setHashSpeed] = useState(0.0);
   const [earnings, setEarnings] = useState(0.0);
+  const [adsWatched, setAdsWatched] = useState(0);
+  const [lastBonusClaimTime, setLastBonusClaimTime] = useState<number | null>(null);
+  const [lastAdResetDate, setLastAdResetDate] = useState<string | null>(null);
 
-  const fetchData = useCallback(async () => {
+
+  const fetchMarketData = useCallback(async () => {
     try {
       const marketData = await getMarketData(MONITORED_COINS);
       if (marketData && marketData.length > 0) {
@@ -39,21 +49,97 @@ export function CryptoDashboard() {
     }
   }, []);
 
+  const loadUserData = useCallback(async (currentUser: User) => {
+    // 1. Try local storage first
+    const localDataStr = localStorage.getItem(`userData-${currentUser.uid}`);
+    if (localDataStr) {
+        const localData: UserData = JSON.parse(localDataStr);
+        setHashSpeed(localData.hashSpeed);
+        setEarnings(localData.earnings);
+        setLastBonusClaimTime(localData.lastBonusClaimTime);
+        setAdsWatched(localData.adsWatched);
+        setLastAdResetDate(localData.lastAdResetDate);
+    }
+
+    // 2. Fetch from Firebase and potentially create a new user doc
+    const firebaseData = await getUserData(currentUser.uid);
+    if (firebaseData) {
+        setHashSpeed(firebaseData.hashSpeed);
+        setEarnings(firebaseData.earnings);
+        setLastBonusClaimTime(firebaseData.lastBonusClaimTime);
+        setAdsWatched(firebaseData.adsWatched);
+        setLastAdResetDate(firebaseData.lastAdResetDate);
+    } else {
+        const newUserData: UserData = {
+            hashSpeed: 0.0,
+            earnings: 0.0,
+            lastBonusClaimTime: null,
+            adsWatched: 0,
+            lastAdResetDate: new Date().toISOString().split('T')[0]
+        };
+        await createUserData(currentUser.uid, newUserData);
+    }
+  }, []);
+  
+  const saveUserData = useCallback(() => {
+    if (!user) return;
+
+    const today = new Date().toISOString().split('T')[0];
+    const newAdsWatched = lastAdResetDate !== today ? 0 : adsWatched;
+    const newLastAdResetDate = today;
+
+    const userData: UserData = {
+        hashSpeed,
+        earnings,
+        lastBonusClaimTime,
+        adsWatched: newAdsWatched,
+        lastAdResetDate: newLastAdResetDate,
+    };
+
+    // Save to local storage
+    localStorage.setItem(`userData-${user.uid}`, JSON.stringify(userData));
+    // Save to Firebase
+    updateUserData(user.uid, userData);
+    
+    if (newAdsWatched === 0) {
+      setAdsWatched(0);
+    }
+    setLastAdResetDate(newLastAdResetDate);
+
+  }, [user, hashSpeed, earnings, lastBonusClaimTime, adsWatched, lastAdResetDate]);
+
   useEffect(() => {
-    fetchData();
-    const interval = setInterval(fetchData, 60000); // Update every 60 seconds
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        loadUserData(currentUser);
+      } else {
+        setIsLoading(false);
+      }
+    });
+    return () => unsubscribe();
+  }, [loadUserData]);
+
+  useEffect(() => {
+    fetchMarketData();
+    const interval = setInterval(fetchMarketData, 60000); 
 
     return () => clearInterval(interval);
-  }, [fetchData]);
+  }, [fetchMarketData]);
 
+  // Autosave progress every 15 seconds
+  useEffect(() => {
+    const saveInterval = setInterval(() => {
+        saveUserData();
+    }, 15000);
+    return () => clearInterval(saveInterval);
+  }, [saveUserData]);
+  
   useEffect(() => {
     if (hashSpeed > 0 && data[selectedCryptoId]) {
-      const btcPerSecond = 0.00000000005; // Example earning rate
+      const btcPerSecond = 0.00000000005; 
       const interval = setInterval(() => {
-        setEarnings(prev => {
-          const newEarnings = prev + btcPerSecond * hashSpeed;
-          return newEarnings;
-        });
+        setEarnings(prev => prev + btcPerSecond * hashSpeed);
       }, 1000);
       return () => clearInterval(interval);
     }
@@ -85,6 +171,10 @@ export function CryptoDashboard() {
               crypto={selectedCrypto}
               setHashSpeed={setHashSpeed}
               hashSpeed={hashSpeed}
+              adsWatched={adsWatched}
+              setAdsWatched={setAdsWatched}
+              lastBonusClaimTime={lastBonusClaimTime}
+              setLastBonusClaimTime={setLastBonusClaimTime}
             />
           </>
         )}
