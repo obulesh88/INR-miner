@@ -16,6 +16,14 @@ import { onAuthStateChanged, type User } from 'firebase/auth';
 
 const MONITORED_COINS = ['bitcoin', 'ethereum', 'dogecoin'];
 
+const initialUserData: UserData = {
+  hashSpeed: 0.0,
+  earnings: 0.0,
+  adsWatched: 0,
+  lastBonusClaimTime: null,
+  lastAdResetDate: null,
+};
+
 export function CryptoDashboard() {
   const [data, setData] = useState<Record<string, CryptoData>>({});
   const [selectedCryptoId, setSelectedCryptoId] = useState<string>(
@@ -25,13 +33,7 @@ export function CryptoDashboard() {
   const [user, setUser] = useState<User | null>(null);
 
   // User progress state
-  const [userData, setUserData] = useState<UserData>({
-    hashSpeed: 0.0,
-    earnings: 0.0,
-    adsWatched: 0,
-    lastBonusClaimTime: null,
-    lastAdResetDate: null,
-  });
+  const [userData, setUserData] = useState<UserData>(initialUserData);
 
   const fetchMarketData = useCallback(async () => {
     try {
@@ -51,21 +53,22 @@ export function CryptoDashboard() {
   }, []);
 
   const loadUserData = useCallback(async (currentUser: User) => {
+    let dataToSet: UserData | null = null;
     const localDataStr = localStorage.getItem(`userData-${currentUser.uid}`);
     if (localDataStr) {
-        const localData: UserData = JSON.parse(localDataStr);
-        setUserData(localData);
+        dataToSet = JSON.parse(localDataStr);
     }
 
     const firebaseData = await getUserData(currentUser.uid);
     if (firebaseData) {
-        setUserData(firebaseData);
+        dataToSet = firebaseData;
+    }
+
+    if (dataToSet) {
+      setUserData(dataToSet);
     } else {
         const newUserData: UserData = {
-            hashSpeed: 0.0,
-            earnings: 0.0,
-            lastBonusClaimTime: null,
-            adsWatched: 0,
+            ...initialUserData,
             lastAdResetDate: new Date().toISOString().split('T')[0]
         };
         await createUserData(currentUser.uid, newUserData);
@@ -145,7 +148,7 @@ export function CryptoDashboard() {
                 <p className="text-sm text-muted-foreground mb-1">Active Mining Power</p>
                 <div className="flex items-center gap-2">
                   <Zap className="h-6 w-6 text-primary" />
-                  <p className="text-2xl font-bold">{userData.hashSpeed.toFixed(2)} H/s</p>
+                  <p className="text-2xl font-bold">{(userData.hashSpeed || 0).toFixed(2)} H/s</p>
                 </div>
                 <p className="text-sm text-muted-foreground mt-1">Actively generating {selectedCrypto.symbol.toUpperCase()}</p>
               </CardContent>
