@@ -1,7 +1,7 @@
 
 'use client';
 
-import type { CryptoData } from '@/lib/types';
+import type { UserData } from '@/services/userData';
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -12,13 +12,8 @@ import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 
 interface ProgressDisplayProps {
-  crypto: CryptoData;
-  setHashSpeed: React.Dispatch<React.SetStateAction<number>>;
-  hashSpeed: number;
-  adsWatched: number;
-  setAdsWatched: React.Dispatch<React.SetStateAction<number>>;
-  lastBonusClaimTime: number | null;
-  setLastBonusClaimTime: (time: number | null) => void;
+  userData: UserData;
+  onUserDataChange: (newUserData: UserData) => void;
 }
 
 const DAILY_BONUS_HASH_INCREASE = 0.02;
@@ -27,11 +22,8 @@ const MAX_ADS_WATCHED = 44;
 const CLAIM_COOLDOWN_SECONDS = 24 * 60 * 60; // 24 hours
 
 export default function ProgressDisplay({
-  setHashSpeed,
-  adsWatched,
-  setAdsWatched,
-  lastBonusClaimTime,
-  setLastBonusClaimTime,
+  userData,
+  onUserDataChange,
 }: ProgressDisplayProps) {
   const { toast } = useToast();
   const router = useRouter();
@@ -39,16 +31,16 @@ export default function ProgressDisplay({
   const [countdown, setCountdown] = useState(0);
 
   useEffect(() => {
-    if (lastBonusClaimTime) {
+    if (userData.lastBonusClaimTime) {
       const now = Date.now();
-      const timePassed = Math.floor((now - lastBonusClaimTime) / 1000);
+      const timePassed = Math.floor((now - userData.lastBonusClaimTime) / 1000);
       if (timePassed < CLAIM_COOLDOWN_SECONDS) {
         setCountdown(CLAIM_COOLDOWN_SECONDS - timePassed);
       } else {
-        setLastBonusClaimTime(null);
+        onUserDataChange({ ...userData, lastBonusClaimTime: null });
       }
     }
-  }, [lastBonusClaimTime, setLastBonusClaimTime]);
+  }, [userData, onUserDataChange]);
   
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -56,7 +48,7 @@ export default function ProgressDisplay({
       timer = setInterval(() => {
         setCountdown((prev) => {
           if (prev <= 1) {
-            setLastBonusClaimTime(null);
+            onUserDataChange({ ...userData, lastBonusClaimTime: null });
             return 0;
           }
           return prev - 1;
@@ -64,7 +56,7 @@ export default function ProgressDisplay({
       }, 1000);
     }
     return () => clearInterval(timer);
-  }, [countdown, setLastBonusClaimTime]);
+  }, [countdown, onUserDataChange, userData]);
 
   const handleClaimBonus = () => {
     if (!auth.currentUser) {
@@ -72,12 +64,16 @@ export default function ProgressDisplay({
       return;
     }
     const now = Date.now();
-    const timeSinceLastClaim = lastBonusClaimTime ? (now - lastBonusClaimTime) / 1000 : Infinity;
+    const timeSinceLastClaim = userData.lastBonusClaimTime ? (now - userData.lastBonusClaimTime) / 1000 : Infinity;
 
     if (timeSinceLastClaim >= CLAIM_COOLDOWN_SECONDS) {
-      setLastBonusClaimTime(now);
       setCountdown(CLAIM_COOLDOWN_SECONDS);
-      setHashSpeed(prev => prev + DAILY_BONUS_HASH_INCREASE);
+      const newUserData: UserData = {
+          ...userData,
+          hashSpeed: userData.hashSpeed + DAILY_BONUS_HASH_INCREASE,
+          lastBonusClaimTime: now,
+      };
+      onUserDataChange(newUserData);
       toast({
         title: 'Daily Bonus Claimed!',
         description: `You've increased hash speed by ${DAILY_BONUS_HASH_INCREASE.toFixed(2)} H/s.`,
@@ -90,7 +86,7 @@ export default function ProgressDisplay({
       router.push('/login');
       return;
     }
-    if (adsWatched >= MAX_ADS_WATCHED) {
+    if (userData.adsWatched >= MAX_ADS_WATCHED) {
       toast({
         variant: 'destructive',
         title: 'Ad Limit Reached',
@@ -99,12 +95,16 @@ export default function ProgressDisplay({
       return;
     }
     
-    setAdsWatched(prev => prev + 1);
-    setHashSpeed(prev => prev + AD_BONUS_HASH_INCREASE);
+    const newUserData: UserData = {
+        ...userData,
+        hashSpeed: userData.hashSpeed + AD_BONUS_HASH_INCREASE,
+        adsWatched: userData.adsWatched + 1,
+    };
+    onUserDataChange(newUserData);
     
     toast({
       title: 'Ad Watched!',
-      description: `You've increased hash speed by ${AD_BONUS_HASH_INCREASE.toFixed(2)} H/s. Watched ${adsWatched + 1}/${MAX_ADS_WATCHED} ads today.`,
+      description: `You've increased hash speed by ${AD_BONUS_HASH_INCREASE.toFixed(2)} H/s. Watched ${newUserData.adsWatched}/${MAX_ADS_WATCHED} ads today.`,
     });
   };
   
@@ -134,7 +134,7 @@ export default function ProgressDisplay({
           </div>
           <div>
             <p className="text-xs text-muted-foreground">
-              Ads Watched Today: {adsWatched}/{MAX_ADS_WATCHED}
+              Ads Watched Today: {userData.adsWatched}/{MAX_ADS_WATCHED}
             </p>
           </div>
         </div>
@@ -146,9 +146,9 @@ export default function ProgressDisplay({
               ? `Next Claim in ${formatCountdown(countdown)}`
               : 'Claim Daily Bonus'}
           </Button>
-          <Button onClick={handleWatchAd} disabled={adsWatched >= MAX_ADS_WATCHED}>
+          <Button onClick={handleWatchAd} disabled={userData.adsWatched >= MAX_ADS_WATCHED}>
             <Video className="mr-2 h-4 w-4" />
-            {adsWatched >= MAX_ADS_WATCHED ? 'Ad Limit Reached' : 'Watch Ad for Bonus'}
+            {userData.adsWatched >= MAX_ADS_WATCHED ? 'Ad Limit Reached' : 'Watch Ad for Bonus'}
           </Button>
         </div>
       </CardContent>

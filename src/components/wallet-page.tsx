@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -16,15 +16,40 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { X, IndianRupee } from 'lucide-react';
 import CryptoIcon from './crypto-icon';
 import Link from 'next/link';
+import { auth } from '@/lib/firebase';
+import type { UserData } from '@/services/userData';
+import { getMarketData } from '@/services/coingecko';
+import type { CryptoData } from '@/lib/types';
 
 export function WalletPage() {
   const [amount, setAmount] = useState('');
   const [paytmNumber, setPaytmNumber] = useState('');
   const [upiId, setUpiId] = useState('');
+  const [userData, setUserData] = useState<UserData | null>(null);
+  const [btcPrice, setBtcPrice] = useState(0);
 
-  const earnings = 0.0;
-  const priceInInr = 0.0;
-  const minBalanceReached = false;
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (user) {
+        const localDataStr = localStorage.getItem(`userData-${user.uid}`);
+        if (localDataStr) {
+            setUserData(JSON.parse(localDataStr));
+        }
+    }
+     const fetchBtcPrice = async () => {
+        const data: CryptoData[] = await getMarketData(['bitcoin']);
+        if(data && data.length > 0) {
+            setBtcPrice(data[0].current_price);
+        }
+     };
+     fetchBtcPrice();
+  }, []);
+
+  const earnings = userData?.earnings || 0.0;
+  const priceInInr = earnings * btcPrice * 83.5;
+  const minBalanceInr = 1;
+  const minBalanceReached = priceInInr >= minBalanceInr;
+
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
@@ -94,7 +119,7 @@ export function WalletPage() {
                       <IndianRupee className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     </div>
                     <p className="text-xs text-muted-foreground text-right">
-                      Min: ₹1
+                      Min: ₹{minBalanceInr}
                     </p>
                   </div>
                 </TabsContent>
@@ -122,7 +147,7 @@ export function WalletPage() {
                       <IndianRupee className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     </div>
                     <p className="text-xs text-muted-foreground text-right">
-                      Min: ₹1
+                       Min: ₹{minBalanceInr}
                     </p>
                   </div>
                 </TabsContent>

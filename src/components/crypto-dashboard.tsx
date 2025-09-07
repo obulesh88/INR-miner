@@ -25,12 +25,13 @@ export function CryptoDashboard() {
   const [user, setUser] = useState<User | null>(null);
 
   // User progress state
-  const [hashSpeed, setHashSpeed] = useState(0.0);
-  const [earnings, setEarnings] = useState(0.0);
-  const [adsWatched, setAdsWatched] = useState(0);
-  const [lastBonusClaimTime, setLastBonusClaimTime] = useState<number | null>(null);
-  const [lastAdResetDate, setLastAdResetDate] = useState<string | null>(null);
-
+  const [userData, setUserData] = useState<UserData>({
+    hashSpeed: 0.0,
+    earnings: 0.0,
+    adsWatched: 0,
+    lastBonusClaimTime: null,
+    lastAdResetDate: null,
+  });
 
   const fetchMarketData = useCallback(async () => {
     try {
@@ -50,25 +51,15 @@ export function CryptoDashboard() {
   }, []);
 
   const loadUserData = useCallback(async (currentUser: User) => {
-    // 1. Try local storage first
     const localDataStr = localStorage.getItem(`userData-${currentUser.uid}`);
     if (localDataStr) {
         const localData: UserData = JSON.parse(localDataStr);
-        setHashSpeed(localData.hashSpeed);
-        setEarnings(localData.earnings);
-        setLastBonusClaimTime(localData.lastBonusClaimTime);
-        setAdsWatched(localData.adsWatched);
-        setLastAdResetDate(localData.lastAdResetDate);
+        setUserData(localData);
     }
 
-    // 2. Fetch from Firebase and potentially create a new user doc
     const firebaseData = await getUserData(currentUser.uid);
     if (firebaseData) {
-        setHashSpeed(firebaseData.hashSpeed);
-        setEarnings(firebaseData.earnings);
-        setLastBonusClaimTime(firebaseData.lastBonusClaimTime);
-        setAdsWatched(firebaseData.adsWatched);
-        setLastAdResetDate(firebaseData.lastAdResetDate);
+        setUserData(firebaseData);
     } else {
         const newUserData: UserData = {
             hashSpeed: 0.0,
@@ -78,43 +69,27 @@ export function CryptoDashboard() {
             lastAdResetDate: new Date().toISOString().split('T')[0]
         };
         await createUserData(currentUser.uid, newUserData);
+        setUserData(newUserData);
     }
   }, []);
   
-  const saveUserData = useCallback(() => {
+  const saveUserData = useCallback((dataToSave: UserData) => {
     if (!user) return;
 
     const today = new Date().toISOString().split('T')[0];
-    const newAdsWatched = lastAdResetDate !== today ? 0 : adsWatched;
-    const newLastAdResetDate = today;
-
-    const userData: UserData = {
-        hashSpeed,
-        earnings,
-        lastBonusClaimTime,
-        adsWatched: newAdsWatched,
-        lastAdResetDate: newLastAdResetDate,
-    };
-
-    // Save to local storage
-    localStorage.setItem(`userData-${user.uid}`, JSON.stringify(userData));
-    // Save to Firebase
-    updateUserData(user.uid, userData);
-    
-    if (newAdsWatched === 0) {
-      setAdsWatched(0);
+    const finalData = { ...dataToSave };
+    if (finalData.lastAdResetDate !== today) {
+        finalData.adsWatched = 0;
+        finalData.lastAdResetDate = today;
     }
-    setLastAdResetDate(newLastAdResetDate);
+    
+    setUserData(finalData);
 
-  }, [user, hashSpeed, earnings, lastBonusClaimTime, adsWatched, lastAdResetDate]);
+    localStorage.setItem(`userData-${user.uid}`, JSON.stringify(finalData));
+    updateUserData(user.uid, finalData);
 
-  const saveClaimTime = useCallback((time: number) => {
-      if (!user) return;
-      setLastBonusClaimTime(time);
-      const userData = { lastBonusClaimTime: time };
-      localStorage.setItem(`userData-${user.uid}`, JSON.stringify({ ...JSON.parse(localStorage.getItem(`userData-${user.uid}`) || '{}'), ...userData }));
-      updateUserData(user.uid, userData);
   }, [user]);
+
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -137,21 +112,22 @@ export function CryptoDashboard() {
 
   // Autosave progress every 15 seconds
   useEffect(() => {
+    if(!user) return;
     const saveInterval = setInterval(() => {
-        saveUserData();
+        saveUserData(userData);
     }, 15000);
     return () => clearInterval(saveInterval);
-  }, [saveUserData]);
+  }, [saveUserData, userData, user]);
   
   useEffect(() => {
-    if (hashSpeed > 0 && data[selectedCryptoId]) {
+    if (userData.hashSpeed > 0 && data[selectedCryptoId]) {
       const btcPerSecond = 0.00000000005; 
       const interval = setInterval(() => {
-        setEarnings(prev => prev + btcPerSecond * hashSpeed);
+        setUserData(prev => ({...prev, earnings: prev.earnings + btcPerSecond * userData.hashSpeed}));
       }, 1000);
       return () => clearInterval(interval);
     }
-  }, [hashSpeed, data, selectedCryptoId]);
+  }, [userData.hashSpeed, data, selectedCryptoId]);
 
   const selectedCrypto = data[selectedCryptoId];
 
@@ -162,27 +138,22 @@ export function CryptoDashboard() {
           <DashboardSkeleton />
         ) : (
           <>
-            <ValueTracker crypto={selectedCrypto} earnings={earnings} />
+            <ValueTracker crypto={selectedCrypto} earnings={userData.earnings} />
             
             <Card>
               <CardContent className="p-4">
                 <p className="text-sm text-muted-foreground mb-1">Active Mining Power</p>
                 <div className="flex items-center gap-2">
                   <Zap className="h-6 w-6 text-primary" />
-                  <p className="text-2xl font-bold">{hashSpeed.toFixed(2)} H/s</p>
+                  <p className="text-2xl font-bold">{userData.hashSpeed.toFixed(2)} H/s</p>
                 </div>
                 <p className="text-sm text-muted-foreground mt-1">Actively generating {selectedCrypto.symbol.toUpperCase()}</p>
               </CardContent>
             </Card>
 
             <ProgressDisplay
-              crypto={selectedCrypto}
-              setHashSpeed={setHashSpeed}
-              hashSpeed={hashSpeed}
-              adsWatched={adsWatched}
-              setAdsWatched={setAdsWatched}
-              lastBonusClaimTime={lastBonusClaimTime}
-              setLastBonusClaimTime={saveClaimTime}
+              userData={userData}
+              onUserDataChange={saveUserData}
             />
           </>
         )}
