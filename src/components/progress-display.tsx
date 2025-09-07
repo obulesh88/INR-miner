@@ -8,6 +8,9 @@ import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Gift, Video } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { auth } from '@/lib/firebase';
+import { useRouter } from 'next/navigation';
+
 
 interface ProgressDisplayProps {
   crypto: CryptoData;
@@ -17,11 +20,13 @@ interface ProgressDisplayProps {
 
 const DAILY_BONUS_HASH_INCREASE = 0.01;
 const AD_BONUS_HASH_INCREASE = 0.14;
+const MAX_ADS_WATCHED = 44;
 
 const CLAIM_COOLDOWN_SECONDS = 24 * 60 * 60; // 24 hours
 
 export default function ProgressDisplay({ crypto, setHashSpeed, hashSpeed }: ProgressDisplayProps) {
   const { toast } = useToast();
+  const router = useRouter();
   
   const [adsWatched, setAdsWatched] = useState(0);
   const [lastBonusClaimTime, setLastBonusClaimTime] = useState<number | null>(null);
@@ -77,6 +82,10 @@ export default function ProgressDisplay({ crypto, setHashSpeed, hashSpeed }: Pro
   }, [lastBonusClaimTime, countdown]);
 
   const handleClaimBonus = () => {
+     if (!auth.currentUser) {
+      router.push('/login');
+      return;
+    }
     if (!lastBonusClaimTime) {
       const now = Date.now();
       setLastBonusClaimTime(now);
@@ -97,7 +106,15 @@ export default function ProgressDisplay({ crypto, setHashSpeed, hashSpeed }: Pro
   };
 
   const handleWatchAd = () => {
-    window.open('https://nocturnal-minimum.com/b/3kV.0/PX3wp/vVbTmjVEJHZKDD0s2/NTjSIAzlMHTngX3eL/TBY-2rMZjYMBxCOlDogR', '_blank');
+    if (adsWatched >= MAX_ADS_WATCHED) {
+      toast({
+        variant: 'destructive',
+        title: 'Ad Limit Reached',
+        description: `You can only watch ${MAX_ADS_WATCHED} ads per day.`,
+      });
+      return;
+    }
+    
     const newAdsWatched = adsWatched + 1;
     setAdsWatched(newAdsWatched);
     localStorage.setItem('adsWatched', newAdsWatched.toString());
@@ -110,7 +127,7 @@ export default function ProgressDisplay({ crypto, setHashSpeed, hashSpeed }: Pro
     
     toast({
       title: 'Ad Watched!',
-      description: `You've increased hash speed by ${AD_BONUS_HASH_INCREASE.toFixed(2)} H/s. Watched ${newAdsWatched} ads today.`,
+      description: `You've increased hash speed by ${AD_BONUS_HASH_INCREASE.toFixed(2)} H/s. Watched ${newAdsWatched}/${MAX_ADS_WATCHED} ads today.`,
     });
   };
   
@@ -140,7 +157,7 @@ export default function ProgressDisplay({ crypto, setHashSpeed, hashSpeed }: Pro
           </div>
           <div>
             <p className="text-xs text-muted-foreground">
-              Ads Watched Today: {adsWatched}
+              Ads Watched Today: {adsWatched}/{MAX_ADS_WATCHED}
             </p>
           </div>
         </div>
@@ -152,9 +169,9 @@ export default function ProgressDisplay({ crypto, setHashSpeed, hashSpeed }: Pro
               ? `Next Claim in ${formatCountdown(countdown)}`
               : 'Claim Daily Bonus'}
           </Button>
-          <Button onClick={handleWatchAd}>
+          <Button onClick={handleWatchAd} disabled={adsWatched >= MAX_ADS_WATCHED}>
             <Video className="mr-2 h-4 w-4" />
-            Watch Ad for Bonus
+            {adsWatched >= MAX_ADS_WATCHED ? 'Ad Limit Reached' : 'Watch Ad for Bonus'}
           </Button>
         </div>
       </CardContent>
