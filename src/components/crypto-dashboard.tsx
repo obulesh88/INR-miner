@@ -53,6 +53,13 @@ export function CryptoDashboard() {
   }, []);
 
   const loadUserData = useCallback(async (currentUser: User) => {
+    // 1. Load from localStorage first for quick UI update
+    const localDataStr = localStorage.getItem(`userData-${currentUser.uid}`);
+    if (localDataStr) {
+      setUserData(JSON.parse(localDataStr));
+    }
+
+    // 2. Fetch from Firebase to get the most up-to-date data
     const firebaseData = await getUserData(currentUser.uid);
     
     let dataToSet: UserData;
@@ -60,31 +67,37 @@ export function CryptoDashboard() {
     if (firebaseData) {
         dataToSet = firebaseData;
     } else {
+        // If no data in Firebase, create it.
         const newUserData: UserData = {
-            ...initialUserData,
+            ...(localDataStr ? JSON.parse(localDataStr) : initialUserData),
             lastAdResetDate: new Date().toISOString().split('T')[0]
         };
         await createUserData(currentUser.uid, newUserData);
         dataToSet = newUserData;
     }
     
+    // 3. Set state with the definitive data and update localStorage
     setUserData(dataToSet);
     localStorage.setItem(`userData-${currentUser.uid}`, JSON.stringify(dataToSet));
   }, []);
   
-  const saveUserData = useCallback((dataToSave: UserData) => {
+  // This function now handles all updates to user data.
+  const handleUserDataChange = useCallback((newUserData: UserData) => {
     if (!user) return;
 
+    // Reset ads watched if it's a new day
     const today = new Date().toISOString().split('T')[0];
-    const finalData = { ...dataToSave };
+    const finalData = { ...newUserData };
     if (finalData.lastAdResetDate !== today) {
         finalData.adsWatched = 0;
         finalData.lastAdResetDate = today;
     }
     
+    // Update state and localStorage immediately
     setUserData(finalData);
-
     localStorage.setItem(`userData-${user.uid}`, JSON.stringify(finalData));
+
+    // Update Firebase (will be queued if offline)
     updateUserData(user.uid, finalData);
 
   }, [user]);
@@ -94,8 +107,11 @@ export function CryptoDashboard() {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
+        setIsLoading(true);
         loadUserData(currentUser);
       } else {
+        // Clear data if user logs out
+        setUserData(initialUserData);
         setIsLoading(false);
       }
     });
@@ -108,25 +124,35 @@ export function CryptoDashboard() {
 
     return () => clearInterval(interval);
   }, [fetchMarketData]);
-
-  // Autosave progress every 15 seconds
-  useEffect(() => {
-    if(!user) return;
-    const saveInterval = setInterval(() => {
-        saveUserData(userData);
-    }, 15000);
-    return () => clearInterval(saveInterval);
-  }, [saveUserData, userData, user]);
   
+  // Mining effect
   useEffect(() => {
     if (userData.hashSpeed > 0 && data[selectedCryptoId]) {
       const btcPerSecond = 0.00000000005; 
       const interval = setInterval(() => {
-        setUserData(prev => ({...prev, earnings: prev.earnings + btcPerSecond * userData.hashSpeed}));
+        // Use a function for state update to get the latest state
+        setUserData(prev => {
+            const newEarnings = prev.earnings + btcPerSecond * prev.hashSpeed;
+            return {...prev, earnings: newEarnings };
+        });
       }, 1000);
       return () => clearInterval(interval);
     }
   }, [userData.hashSpeed, data, selectedCryptoId]);
+
+  // Auto-save to Firebase every 15 seconds
+  useEffect(() => {
+    if(!user) return;
+    const saveInterval = setInterval(() => {
+        // We get the latest state from localStorage to ensure we're not saving stale data
+        const localDataStr = localStorage.getItem(`userData-${user.uid}`);
+        if(localDataStr) {
+            updateUserData(user.uid, JSON.parse(localDataStr));
+        }
+    }, 15000);
+    return () => clearInterval(saveInterval);
+  }, [user]);
+
 
   const selectedCrypto = data[selectedCryptoId];
 
@@ -152,7 +178,7 @@ export function CryptoDashboard() {
 
             <ProgressDisplay
               userData={userData}
-              onUserDataChange={saveUserData}
+              onUserDataChange={handleUserDataChange}
             />
           </>
         )}

@@ -28,57 +28,49 @@ export default function ProgressDisplay({
   const { toast } = useToast();
   const router = useRouter();
   
-  const [countdown, setCountdown] = useState(0);
+  const [timeToNextClaim, setTimeToNextClaim] = useState(0);
 
   useEffect(() => {
+    let timer: NodeJS.Timeout;
     if (userData.lastBonusClaimTime) {
       const now = Date.now();
       const timePassed = Math.floor((now - userData.lastBonusClaimTime) / 1000);
-      if (timePassed < CLAIM_COOLDOWN_SECONDS) {
-        setCountdown(CLAIM_COOLDOWN_SECONDS - timePassed);
+      const remainingTime = CLAIM_COOLDOWN_SECONDS - timePassed;
+
+      if (remainingTime > 0) {
+        setTimeToNextClaim(remainingTime);
+        timer = setInterval(() => {
+          setTimeToNextClaim((prev) => (prev > 0 ? prev - 1 : 0));
+        }, 1000);
       } else {
-        onUserDataChange({ ...userData, lastBonusClaimTime: null });
+        setTimeToNextClaim(0);
       }
-    }
-  }, [userData, onUserDataChange]);
-  
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (countdown > 0) {
-      timer = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev <= 1) {
-            onUserDataChange({ ...userData, lastBonusClaimTime: null });
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+    } else {
+        setTimeToNextClaim(0);
     }
     return () => clearInterval(timer);
-  }, [countdown, onUserDataChange, userData]);
+  }, [userData.lastBonusClaimTime]);
+
 
   const handleClaimBonus = () => {
     if (!auth.currentUser) {
       router.push('/login');
       return;
     }
-    const now = Date.now();
-    const timeSinceLastClaim = userData.lastBonusClaimTime ? (now - userData.lastBonusClaimTime) / 1000 : Infinity;
+    if(timeToNextClaim > 0) return;
 
-    if (timeSinceLastClaim >= CLAIM_COOLDOWN_SECONDS) {
-      setCountdown(CLAIM_COOLDOWN_SECONDS);
-      const newUserData: UserData = {
-          ...userData,
-          hashSpeed: userData.hashSpeed + DAILY_BONUS_HASH_INCREASE,
-          lastBonusClaimTime: now,
-      };
-      onUserDataChange(newUserData);
-      toast({
-        title: 'Daily Bonus Claimed!',
-        description: `You've increased hash speed by ${DAILY_BONUS_HASH_INCREASE.toFixed(2)} H/s.`,
-      });
-    }
+    const now = Date.now();
+    const newUserData: UserData = {
+        ...userData,
+        hashSpeed: userData.hashSpeed + DAILY_BONUS_HASH_INCREASE,
+        lastBonusClaimTime: now,
+    };
+    onUserDataChange(newUserData);
+    setTimeToNextClaim(CLAIM_COOLDOWN_SECONDS);
+    toast({
+      title: 'Daily Bonus Claimed!',
+      description: `You've increased hash speed by ${DAILY_BONUS_HASH_INCREASE.toFixed(2)} H/s.`,
+    });
   };
 
   const handleWatchAd = () => {
@@ -115,7 +107,7 @@ export default function ProgressDisplay({
     return `${h}:${m}:${s}`;
   };
   
-  const dailyBonusProgress = countdown > 0 ? 100 : 0;
+  const dailyBonusProgress = timeToNextClaim > 0 ? (1 - timeToNextClaim / CLAIM_COOLDOWN_SECONDS) * 100 : 100;
   
   return (
     <Card>
@@ -136,14 +128,15 @@ export default function ProgressDisplay({
             <p className="text-xs text-muted-foreground">
               Ads Watched Today: {userData.adsWatched}/{MAX_ADS_WATCHED}
             </p>
+             <Progress value={(userData.adsWatched / MAX_ADS_WATCHED) * 100} className="h-1 mt-1" />
           </div>
         </div>
 
         <div className="flex flex-col gap-3 mt-6">
-          <Button onClick={handleClaimBonus} disabled={countdown > 0}>
+          <Button onClick={handleClaimBonus} disabled={timeToNextClaim > 0}>
             <Gift className="mr-2 h-4 w-4" />
-            {countdown > 0
-              ? `Next Claim in ${formatCountdown(countdown)}`
+            {timeToNextClaim > 0
+              ? `Next Claim in ${formatCountdown(timeToNextClaim)}`
               : 'Claim Daily Bonus'}
           </Button>
           <Button onClick={handleWatchAd} disabled={userData.adsWatched >= MAX_ADS_WATCHED}>

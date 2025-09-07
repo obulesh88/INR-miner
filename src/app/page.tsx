@@ -18,8 +18,9 @@ export default function Home() {
         // User is signed in, redirect to dashboard.
         router.replace('/dashboard');
       } else {
-        // No user is signed in, show the login page.
-        setIsLoading(false);
+        // No user is signed in, show the login page after a brief delay.
+        // This prevents a flash of the login page if the user is already logged in.
+         setTimeout(() => setIsLoading(false), 250);
       }
     });
 
@@ -30,7 +31,7 @@ export default function Home() {
   if (isLoading) {
     return (
         <div className="flex items-center justify-center min-h-screen bg-background">
-            <div className="mx-auto max-w-sm w-full space-y-6">
+            <div className="mx-auto max-w-sm w-full space-y-6 p-4">
                 <div className="space-y-2 text-center">
                     <Skeleton className="h-8 w-24 mx-auto" />
                     <Skeleton className="h-4 w-64 mx-auto" />
