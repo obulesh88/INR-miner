@@ -31,8 +31,6 @@ export function CryptoDashboard() {
   );
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
-
-  // User progress state
   const [userData, setUserData] = useState<UserData>(initialUserData);
 
   const fetchMarketData = useCallback(async () => {
@@ -47,8 +45,6 @@ export function CryptoDashboard() {
       }
     } catch (error) {
       console.error('Failed to fetch crypto data', error);
-    } finally {
-      setIsLoading(false);
     }
   }, []);
 
@@ -81,7 +77,6 @@ export function CryptoDashboard() {
     localStorage.setItem(`userData-${currentUser.uid}`, JSON.stringify(dataToSet));
   }, []);
   
-  // This function now handles all updates to user data.
   const handleUserDataChange = useCallback((newUserData: UserData) => {
     if (!user) return;
 
@@ -93,63 +88,52 @@ export function CryptoDashboard() {
         finalData.lastAdResetDate = today;
     }
     
-    // Update state and localStorage immediately
     setUserData(finalData);
     localStorage.setItem(`userData-${user.uid}`, JSON.stringify(finalData));
-
-    // Update Firebase (will be queued if offline)
     updateUserData(user.uid, finalData);
 
   }, [user]);
-
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
         setIsLoading(true);
-        loadUserData(currentUser).finally(() => setIsLoading(false));
+        Promise.all([
+          loadUserData(currentUser),
+          fetchMarketData()
+        ]).finally(() => setIsLoading(false));
       } else {
-        // Clear data if user logs out
         setUserData(initialUserData);
         setIsLoading(false);
       }
     });
     return () => unsubscribe();
-  }, [loadUserData]);
+  }, [loadUserData, fetchMarketData]);
 
   useEffect(() => {
-    fetchMarketData();
     const interval = setInterval(fetchMarketData, 60000); 
-
     return () => clearInterval(interval);
   }, [fetchMarketData]);
   
-  // Mining effect
   useEffect(() => {
-    if (userData.hashSpeed > 0 && data[selectedCryptoId]) {
+    if (user && userData.hashSpeed > 0 && data[selectedCryptoId]) {
       const btcPerSecond = 0.00000000005; 
       const interval = setInterval(() => {
-        // Use a function for state update to get the latest state
         setUserData(prev => {
             const newEarnings = prev.earnings + btcPerSecond * prev.hashSpeed;
             const updatedData = {...prev, earnings: newEarnings };
-            // Also save this periodic progress
-            if(auth.currentUser) {
-                localStorage.setItem(`userData-${auth.currentUser.uid}`, JSON.stringify(updatedData));
-            }
+            localStorage.setItem(`userData-${user.uid}`, JSON.stringify(updatedData));
             return updatedData;
         });
       }, 1000);
       return () => clearInterval(interval);
     }
-  }, [userData.hashSpeed, data, selectedCryptoId]);
+  }, [user, userData.hashSpeed, data, selectedCryptoId]);
 
-  // Auto-save to Firebase every 15 seconds
   useEffect(() => {
     if(!user) return;
     const saveInterval = setInterval(() => {
-        // We get the latest state from localStorage to ensure we're not saving stale data
         const localDataStr = localStorage.getItem(`userData-${user.uid}`);
         if(localDataStr) {
             updateUserData(user.uid, JSON.parse(localDataStr));
@@ -157,7 +141,6 @@ export function CryptoDashboard() {
     }, 15000);
     return () => clearInterval(saveInterval);
   }, [user]);
-
 
   const selectedCrypto = data[selectedCryptoId];
 

@@ -20,6 +20,8 @@ import { auth } from '@/lib/firebase';
 import type { UserData } from '@/services/userData';
 import { getMarketData } from '@/services/coingecko';
 import type { CryptoData } from '@/lib/types';
+import { onAuthStateChanged, type User } from 'firebase/auth';
+import { getUserData } from '@/services/userData';
 
 export function WalletPage() {
   const [amount, setAmount] = useState('');
@@ -27,29 +29,41 @@ export function WalletPage() {
   const [upiId, setUpiId] = useState('');
   const [userData, setUserData] = useState<UserData | null>(null);
   const [btcPrice, setBtcPrice] = useState(0);
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    const user = auth.currentUser;
-    if (user) {
-        const localDataStr = localStorage.getItem(`userData-${user.uid}`);
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        // Load from localStorage first
+        const localDataStr = localStorage.getItem(`userData-${currentUser.uid}`);
         if (localDataStr) {
-            setUserData(JSON.parse(localDataStr));
+          setUserData(JSON.parse(localDataStr));
         }
-    }
-     const fetchBtcPrice = async () => {
-        const data: CryptoData[] = await getMarketData(['bitcoin']);
-        if(data && data.length > 0) {
-            setBtcPrice(data[0].current_price);
+        // Then get from firebase for latest
+        const firebaseData = await getUserData(currentUser.uid);
+        if (firebaseData) {
+          setUserData(firebaseData);
         }
-     };
-     fetchBtcPrice();
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const fetchBtcPrice = async () => {
+      const data: CryptoData[] = await getMarketData(['bitcoin']);
+      if (data && data.length > 0) {
+        setBtcPrice(data[0].current_price);
+      }
+    };
+    fetchBtcPrice();
   }, []);
 
   const earnings = userData?.earnings || 0.0;
   const priceInInr = earnings * btcPrice * 83.5;
   const minBalanceInr = 1;
   const minBalanceReached = priceInInr >= minBalanceInr;
-
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
@@ -72,10 +86,10 @@ export function WalletPage() {
                 <CryptoIcon symbol="btc" className="h-8 w-8" />
                 <div>
                   <p className="text-2xl font-bold">
-                    {earnings.toFixed(17)} BTC
+                    {(earnings || 0).toFixed(17)} BTC
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    ≈ ₹{priceInInr.toFixed(2)}
+                    ≈ ₹{(priceInInr || 0).toFixed(2)}
                   </p>
                 </div>
               </div>
