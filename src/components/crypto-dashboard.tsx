@@ -108,7 +108,7 @@ export function CryptoDashboard() {
       setUser(currentUser);
       if (currentUser) {
         setIsLoading(true);
-        loadUserData(currentUser);
+        loadUserData(currentUser).finally(() => setIsLoading(false));
       } else {
         // Clear data if user logs out
         setUserData(initialUserData);
@@ -133,7 +133,12 @@ export function CryptoDashboard() {
         // Use a function for state update to get the latest state
         setUserData(prev => {
             const newEarnings = prev.earnings + btcPerSecond * prev.hashSpeed;
-            return {...prev, earnings: newEarnings };
+            const updatedData = {...prev, earnings: newEarnings };
+            // Also save this periodic progress
+            if(auth.currentUser) {
+                localStorage.setItem(`userData-${auth.currentUser.uid}`, JSON.stringify(updatedData));
+            }
+            return updatedData;
         });
       }, 1000);
       return () => clearInterval(interval);
