@@ -14,12 +14,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { X, IndianRupee } from 'lucide-react';
-import CryptoIcon from './crypto-icon';
 import Link from 'next/link';
 import { auth } from '@/lib/firebase';
 import type { UserData } from '@/services/userData';
-import { getMarketData } from '@/services/coingecko';
-import type { CryptoData } from '@/lib/types';
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import { getUserData } from '@/services/userData';
 
@@ -28,7 +25,6 @@ export function WalletPage() {
   const [paytmNumber, setPaytmNumber] = useState('');
   const [upiId, setUpiId] = useState('');
   const [userData, setUserData] = useState<UserData | null>(null);
-  const [btcPrice, setBtcPrice] = useState(0);
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
@@ -50,20 +46,9 @@ export function WalletPage() {
     return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
-    const fetchBtcPrice = async () => {
-      const data: CryptoData[] = await getMarketData(['bitcoin']);
-      if (data && data.length > 0) {
-        setBtcPrice(data[0].current_price);
-      }
-    };
-    fetchBtcPrice();
-  }, []);
-
-  const earnings = userData?.earnings || 0.0;
-  const priceInInr = earnings * btcPrice * 83.5;
+  const earningsInInr = userData?.earnings || 0.0;
   const minBalanceInr = 1;
-  const minBalanceReached = priceInInr >= minBalanceInr;
+  const minBalanceReached = earningsInInr >= minBalanceInr;
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
@@ -83,13 +68,13 @@ export function WalletPage() {
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-2">
-                <CryptoIcon symbol="btc" className="h-8 w-8" />
+                <IndianRupee className="h-8 w-8" />
                 <div>
                   <p className="text-2xl font-bold">
-                    {(earnings || 0).toFixed(17)} BTC
+                    ₹{(earningsInInr || 0).toFixed(5)}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    ≈ ₹{(priceInInr || 0).toFixed(2)}
+                    Indian Rupees
                   </p>
                 </div>
               </div>

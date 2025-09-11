@@ -118,10 +118,10 @@ export function CryptoDashboard() {
   
   useEffect(() => {
     if (user && userData.hashSpeed > 0 && data[selectedCryptoId]) {
-      const btcPerSecond = 0.00000000005; 
+      const inrPerSecond = 0.00001; 
       const interval = setInterval(() => {
         setUserData(prev => {
-            const newEarnings = prev.earnings + btcPerSecond * prev.hashSpeed;
+            const newEarnings = prev.earnings + inrPerSecond * prev.hashSpeed;
             const updatedData = {...prev, earnings: newEarnings };
             localStorage.setItem(`userData-${user.uid}`, JSON.stringify(updatedData));
             return updatedData;
@@ -151,7 +151,7 @@ export function CryptoDashboard() {
           <DashboardSkeleton />
         ) : (
           <>
-            <ValueTracker crypto={selectedCrypto} earnings={userData.earnings} />
+            <ValueTracker earnings={userData.earnings} />
             
             <Card>
               <CardContent className="p-4">
@@ -160,7 +160,7 @@ export function CryptoDashboard() {
                   <Zap className="h-6 w-6 text-primary" />
                   <p className="text-2xl font-bold">{(userData.hashSpeed || 0).toFixed(2)} H/s</p>
                 </div>
-                <p className="text-sm text-muted-foreground mt-1">Actively generating {selectedCrypto.symbol.toUpperCase()}</p>
+                <p className="text-sm text-muted-foreground mt-1">Actively generating earnings</p>
               </CardContent>
             </Card>
 
