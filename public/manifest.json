@@ -1,12 +1,16 @@
 {
-  "name": "INR Miner",
-  "short_name": "INR Miner",
-  "description": "A simple and fast Progressive Web App for watching videos",
-  "start_url": "/",
-  "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#1976d2",
+  "display": "standalone",
+  "name": "INR miner",
   "orientation": "any",
+  "scope": "/",
+  "short_name": "INR miner",
+  "start_url": "/",
+  "theme_color": "rgb(25, 118, 210)",
+  "id": "Com.kav.INR",
+  "description": "A simple and fast Progressive Web App for watching videos",
+  "lang": "en",
+  "dir": "auto",
   "icons": [
     {
       "src": "/icon-192x192.png",
@@ -21,9 +25,9 @@
   ],
   "shortcuts": [
     {
-      "name": "Start Mining",
+      "name": "Start mining",
       "url": "/dashboard",
-      "description": "Go to the mining dashboard"
+      "description": "Begin your mining session"
     }
   ],
   "categories": [
