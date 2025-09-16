@@ -1,37 +1,23 @@
 {
   "background_color": "#ffffff",
   "display": "standalone",
-  "name": "INR miner",
+  "name": "stu-divxid1a5-obulesh88s-projects.vercel",
   "orientation": "any",
   "scope": "/",
-  "short_name": "INR miner",
+  "short_name": "stu-divxid1a5-obulesh88s-projects.vercel",
   "start_url": "/",
-  "theme_color": "rgb(25, 118, 210)",
-  "id": "Com.kav.INR",
-  "description": "A simple and fast Progressive Web App for watching videos",
+  "theme_color": "#ffffff",
+  "id": "INR miner",
+  "description": "A fast, modern Progressive Web App built with Next.js and TailwindCSS. Works offline and can be installed like a native app.",
   "lang": "en",
-  "dir": "auto",
-  "icons": [
-    {
-      "src": "/icon-192x192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "/icon-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    }
-  ],
   "shortcuts": [
     {
-      "name": "Start mining",
-      "url": "/dashboard",
-      "description": "Begin your mining session"
+      "name": "INR miner",
+      "url": "/",
+      "description": "A fast, modern Progressive Web App built with Next.js and TailwindCSS. Works offline and can be installed like a native app."
     }
   ],
   "categories": [
-    "finance",
-    "games"
+    "finance"
   ]
 }
