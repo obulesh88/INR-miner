@@ -38,7 +38,7 @@ const nextConfig: NextConfig = {
       },
     ]
   },
-  webpack: (config, { isServer }) => {
+  webpack: (config, { isServer, dev }) => {
     if (!isServer) {
       config.plugins.push(
         new InjectManifest({
@@ -46,7 +46,7 @@ const nextConfig: NextConfig = {
           swDest: path.resolve(__dirname, 'public/sw.js'),
           // In dev, we want to see the changes immediately.
           // In prod, we want to have the SW be precached.
-          // mode: process.env.NODE_ENV || 'development',
+          mode: dev ? 'development' : 'production',
           exclude: [
             /^build-manifest\.json$/,
             /^react-loadable-manifest\.json$/,
