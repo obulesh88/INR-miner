@@ -1,18 +1,20 @@
 
-// This is the "Offline page" service worker
+import { precacheAndRoute } from 'workbox-precaching';
 
-importScripts('https://storage.googleapis.com/workbox-cdn/releases/5.1.2/workbox-sw.js');
-
-const CACHE = "pwabuilder-page";
-
-// TODO: replace the following with the correct offline fallback page i.e.: const offlineFallbackPage = "offline.html";
-const offlineFallbackPage = "offline.html";
+// Workbox injects the manifest here at build time.
+// This line is essential for the service worker to cache all the necessary assets.
+precacheAndRoute(self.__WB_MANIFEST || []);
 
 self.addEventListener("message", (event) => {
   if (event.data && event.data.type === "SKIP_WAITING") {
     self.skipWaiting();
   }
 });
+
+// The offline fallback page is no longer needed with this precaching strategy,
+// as the actual pages will be served from the cache when offline.
+const CACHE = "pwabuilder-page";
+const offlineFallbackPage = "/offline.html";
 
 self.addEventListener('install', async (event) => {
   event.waitUntil(
@@ -38,7 +40,7 @@ self.addEventListener('fetch', (event) => {
         const networkResp = await fetch(event.request);
         return networkResp;
       } catch (error) {
-
+        console.log("Fetch failed; returning offline page instead.", error);
         const cache = await caches.open(CACHE);
         const cachedResp = await cache.match(offlineFallbackPage);
         return cachedResp;
