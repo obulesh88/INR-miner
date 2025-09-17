@@ -87,9 +87,6 @@ export default function LoginPage() {
             <Button onClick={handleLogin} disabled={isLoading} className="w-full">
               {isLoading ? 'Logging in...' : 'Login'}
             </Button>
-            <Button variant="outline" className="w-full" disabled={isLoading}>
-              Login with Google
-            </Button>
           </div>
           <div className="mt-4 text-center text-sm">
             Don&apos;t have an account?{" "}
