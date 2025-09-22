@@ -62,14 +62,14 @@ export default function ProgressDisplay({
     const now = Date.now();
     const newUserData: UserData = {
         ...userData,
-        hashSpeed: userData.hashSpeed + DAILY_BONUS_HASH_INCREASE,
+        bonusHashSpeed: (userData.bonusHashSpeed || 0) + DAILY_BONUS_HASH_INCREASE,
         lastBonusClaimTime: now,
     };
     onUserDataChange(newUserData);
     setTimeToNextClaim(CLAIM_COOLDOWN_SECONDS);
     toast({
       title: 'Daily Bonus Claimed!',
-      description: `You've increased hash speed by ${DAILY_BONUS_HASH_INCREASE.toFixed(2)} H/s.`,
+      description: `You've increased bonus hash speed by ${DAILY_BONUS_HASH_INCREASE.toFixed(2)} H/s.`,
     });
   };
 
@@ -89,14 +89,14 @@ export default function ProgressDisplay({
     
     const newUserData: UserData = {
         ...userData,
-        hashSpeed: userData.hashSpeed + AD_BONUS_HASH_INCREASE,
+        bonusHashSpeed: (userData.bonusHashSpeed || 0) + AD_BONUS_HASH_INCREASE,
         adsWatched: userData.adsWatched + 1,
     };
     onUserDataChange(newUserData);
     
     toast({
       title: 'Ad Watched!',
-      description: `You've increased hash speed by ${AD_BONUS_HASH_INCREASE.toFixed(2)} H/s. Watched ${newUserData.adsWatched}/${MAX_ADS_WATCHED} ads today.`,
+      description: `You've increased bonus hash speed by ${AD_BONUS_HASH_INCREASE.toFixed(2)} H/s. Watched ${newUserData.adsWatched}/${MAX_ADS_WATCHED} ads today.`,
     });
   };
   
@@ -116,7 +116,7 @@ export default function ProgressDisplay({
           <h3 className="text-lg font-bold">Daily Tasks</h3>
         </div>
         <p className="text-sm text-muted-foreground mt-1">
-          Complete daily tasks to increase your mining hash speed.
+          Complete daily tasks to increase your temporary bonus hash speed for 24 hours.
         </p>
 
         <div className="grid grid-cols-2 gap-4 mt-6">

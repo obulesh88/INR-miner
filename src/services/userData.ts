@@ -3,11 +3,13 @@ import { doc, getDoc, setDoc, updateDoc, serverTimestamp, type Timestamp } from 
 import { db } from '@/lib/firebase';
 
 export interface UserData {
-  hashSpeed: number;
+  baseHashSpeed: number; // The permanent hash speed
+  bonusHashSpeed: number; // The temporary hash speed from bonuses
   earnings: number;
   lastBonusClaimTime: number | null;
   adsWatched: number;
   lastAdResetDate: string | null;
+  lastHashResetTime: number | null; // Timestamp of the last hash power reset
   lastUpdated?: Timestamp;
 }
 
@@ -17,7 +19,18 @@ export const getUserData = async (userId: string): Promise<UserData | null> => {
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
-      return docSnap.data() as UserData;
+      const data = docSnap.data();
+      // Ensure baseHashSpeed exists for older user documents
+      if (data.baseHashSpeed === undefined) {
+        // You might want to initialize hashSpeed to a base value if it's not present
+        const oldHashSpeed = data.hashSpeed || 0;
+        return {
+          ...data,
+          baseHashSpeed: 0.01, // Default base hash speed
+          bonusHashSpeed: Math.max(0, oldHashSpeed - 0.01)
+        } as UserData;
+      }
+      return data as UserData;
     } else {
       console.log('No such document!');
       return null;
