@@ -20,6 +20,7 @@ const DAILY_BONUS_HASH_INCREASE = 0.02;
 const AD_BONUS_HASH_INCREASE = 0.02;
 const MAX_ADS_WATCHED = 44;
 const CLAIM_COOLDOWN_SECONDS = 24 * 60 * 60; // 24 hours
+const AD_URL = "https://enviousgarbage.com/bX3MV-0.Pw3Np/v/bHmEVxJ/ZPDc0S2/NNjTIXzRMyTagq3/LJTLYi2jMKjRMsxAOQDRgx";
 
 export default function ProgressDisplay({
   userData,
@@ -87,6 +88,9 @@ export default function ProgressDisplay({
       return;
     }
     
+    // Open the ad URL in a new tab
+    window.open(AD_URL, '_blank');
+
     const newUserData: UserData = {
         ...userData,
         bonusHashSpeed: (userData.bonusHashSpeed || 0) + AD_BONUS_HASH_INCREASE,
