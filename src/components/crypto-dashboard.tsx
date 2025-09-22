@@ -18,8 +18,7 @@ const MONITORED_COINS = ['bitcoin', 'ethereum', 'dogecoin'];
 const HASH_POWER_RESET_HOURS = 24;
 
 const initialUserData: UserData = {
-  baseHashSpeed: 0.01,
-  bonusHashSpeed: 0.0,
+  hashSpeed: 0.0,
   earnings: 0.0,
   adsWatched: 0,
   lastBonusClaimTime: null,
@@ -52,19 +51,15 @@ export function CryptoDashboard() {
   }, []);
 
   const loadUserData = useCallback(async (currentUser: User) => {
-    const localDataStr = localStorage.getItem(`userData-${currentUser.uid}`);
-    if (localDataStr) {
-      setUserData(JSON.parse(localDataStr));
-    }
-
-    const firebaseData = await getUserData(currentUser.uid);
+    let firebaseData = await getUserData(currentUser.uid);
     let dataToSet: UserData;
 
     if (firebaseData) {
       dataToSet = firebaseData;
     } else {
+      // If no data or old data format, create fresh user data. This resets the user.
       const newUserData = {
-        ...(localDataStr ? JSON.parse(localDataStr) : initialUserData),
+        ...initialUserData,
         lastAdResetDate: new Date().toISOString().split('T')[0],
         lastHashResetTime: Date.now(),
       };
@@ -80,11 +75,11 @@ export function CryptoDashboard() {
     if (hoursSinceLastReset >= HASH_POWER_RESET_HOURS) {
       dataToSet = {
         ...dataToSet,
-        bonusHashSpeed: 0,
+        hashSpeed: 0, // Reset all hash power
         lastHashResetTime: now,
       };
       // Immediately update Firebase with the reset
-      await updateUserData(currentUser.uid, { bonusHashSpeed: 0, lastHashResetTime: now });
+      await updateUserData(currentUser.uid, { hashSpeed: 0, lastHashResetTime: now });
     }
 
     setUserData(dataToSet);
@@ -130,9 +125,9 @@ export function CryptoDashboard() {
   }, [fetchMarketData]);
   
   useEffect(() => {
-    if (user && (userData.baseHashSpeed + userData.bonusHashSpeed) > 0 && data[selectedCryptoId]) {
+    if (user && userData.hashSpeed > 0 && data[selectedCryptoId]) {
       const inrPerSecond = 0.00001; 
-      const currentHashSpeed = userData.baseHashSpeed + userData.bonusHashSpeed;
+      const currentHashSpeed = userData.hashSpeed;
       const interval = setInterval(() => {
         setUserData(prev => {
             const newEarnings = prev.earnings + inrPerSecond * currentHashSpeed;
@@ -143,7 +138,7 @@ export function CryptoDashboard() {
       }, 1000);
       return () => clearInterval(interval);
     }
-  }, [user, userData.baseHashSpeed, userData.bonusHashSpeed, data, selectedCryptoId]);
+  }, [user, userData.hashSpeed, data, selectedCryptoId]);
 
   useEffect(() => {
     if(!user) return;
@@ -157,8 +152,7 @@ export function CryptoDashboard() {
   }, [user]);
 
   const selectedCrypto = data[selectedCryptoId];
-  const totalHashSpeed = (userData.baseHashSpeed || 0) + (userData.bonusHashSpeed || 0);
-
+  
   return (
     <div className="min-h-screen w-full bg-background p-4 md:p-8">
       <div className="space-y-4 max-w-2xl mx-auto">
@@ -170,14 +164,11 @@ export function CryptoDashboard() {
             
             <Card>
               <CardContent className="p-4">
-                <p className="text-sm text-muted-foreground mb-1">Active Mining Power</p>
+                <p className="text-sm text-muted-foreground mb-1">Temporary Mining Power (resets in 24h)</p>
                 <div className="flex items-center gap-2">
                   <Zap className="h-6 w-6 text-primary" />
-                  <p className="text-2xl font-bold">{(totalHashSpeed).toFixed(2)} H/s</p>
+                  <p className="text-2xl font-bold">{(userData.hashSpeed).toFixed(2)} H/s</p>
                 </div>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Base: {userData.baseHashSpeed.toFixed(2)} H/s, Bonus: {userData.bonusHashSpeed.toFixed(2)} H/s
-                </p>
               </CardContent>
             </Card>
 

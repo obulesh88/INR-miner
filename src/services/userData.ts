@@ -3,8 +3,7 @@ import { doc, getDoc, setDoc, updateDoc, serverTimestamp, type Timestamp } from 
 import { db } from '@/lib/firebase';
 
 export interface UserData {
-  baseHashSpeed: number; // The permanent hash speed
-  bonusHashSpeed: number; // The temporary hash speed from bonuses
+  hashSpeed: number; // All hash speed is now temporary
   earnings: number;
   lastBonusClaimTime: number | null;
   adsWatched: number;
@@ -20,15 +19,9 @@ export const getUserData = async (userId: string): Promise<UserData | null> => {
 
     if (docSnap.exists()) {
       const data = docSnap.data();
-      // Ensure baseHashSpeed exists for older user documents
-      if (data.baseHashSpeed === undefined) {
-        // You might want to initialize hashSpeed to a base value if it's not present
-        const oldHashSpeed = data.hashSpeed || 0;
-        return {
-          ...data,
-          baseHashSpeed: 0.01, // Default base hash speed
-          bonusHashSpeed: Math.max(0, oldHashSpeed - 0.01)
-        } as UserData;
+      // Ensure data structure is up-to-date, reset if old structure is detected
+      if (data.baseHashSpeed !== undefined || data.bonusHashSpeed !== undefined) {
+          return null; // This will trigger a reset in the dashboard
       }
       return data as UserData;
     } else {

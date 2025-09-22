@@ -63,14 +63,14 @@ export default function ProgressDisplay({
     const now = Date.now();
     const newUserData: UserData = {
         ...userData,
-        bonusHashSpeed: (userData.bonusHashSpeed || 0) + DAILY_BONUS_HASH_INCREASE,
+        hashSpeed: (userData.hashSpeed || 0) + DAILY_BONUS_HASH_INCREASE,
         lastBonusClaimTime: now,
     };
     onUserDataChange(newUserData);
     setTimeToNextClaim(CLAIM_COOLDOWN_SECONDS);
     toast({
       title: 'Daily Bonus Claimed!',
-      description: `You've increased bonus hash speed by ${DAILY_BONUS_HASH_INCREASE.toFixed(2)} H/s.`,
+      description: `You've increased your temporary hash speed by ${DAILY_BONUS_HASH_INCREASE.toFixed(2)} H/s.`,
     });
   };
 
@@ -93,14 +93,14 @@ export default function ProgressDisplay({
 
     const newUserData: UserData = {
         ...userData,
-        bonusHashSpeed: (userData.bonusHashSpeed || 0) + AD_BONUS_HASH_INCREASE,
+        hashSpeed: (userData.hashSpeed || 0) + AD_BONUS_HASH_INCREASE,
         adsWatched: userData.adsWatched + 1,
     };
     onUserDataChange(newUserData);
     
     toast({
       title: 'Ad Watched!',
-      description: `You've increased bonus hash speed by ${AD_BONUS_HASH_INCREASE.toFixed(2)} H/s. Watched ${newUserData.adsWatched}/${MAX_ADS_WATCHED} ads today.`,
+      description: `You've increased your temporary hash speed by ${AD_BONUS_HASH_INCREASE.toFixed(2)} H/s. Watched ${newUserData.adsWatched}/${MAX_ADS_WATCHED} ads today.`,
     });
   };
   
