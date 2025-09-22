@@ -107,9 +107,6 @@ export default function SignupPage() {
             <Button onClick={handleSignup} disabled={isLoading} className="w-full">
               {isLoading ? 'Creating account...' : 'Create an account'}
             </Button>
-            <Button variant="outline" className="w-full" disabled={isLoading}>
-              Sign up with Google
-            </Button>
           </div>
           <div className="mt-4 text-center text-sm">
             Already have an account?{" "}

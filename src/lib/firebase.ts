@@ -23,14 +23,21 @@ let db: Firestore;
 
 if (typeof window !== 'undefined') {
   // Client-side initialization
-  db = initializeFirestore(app, {});
-  enableIndexedDbPersistence(db).catch((err) => {
-    if (err.code === 'failed-precondition') {
-      console.log("Persistence failed: Multiple tabs open");
-    } else if (err.code === 'unimplemented') {
-      console.log("Persistence is not supported in this browser");
+  try {
+    db = getFirestore(app);
+    enableIndexedDbPersistence(db);
+  } catch (error: any) {
+    if (error.code === 'failed-precondition') {
+      console.warn('Firestore persistence failed: Multiple tabs open.');
+      // This happens when multiple tabs are open. Persistence will work in the first tab.
+      // We can still get a db instance, but it will be without persistence.
+      db = getFirestore(app);
+    } else if (error.code === 'unimplemented') {
+      console.warn('Firestore persistence is not available in this browser.');
+      // Persistence is not supported in this browser.
+      db = getFirestore(app);
     }
-  });
+  }
 } else {
   // Server-side initialization
   db = getFirestore(app);
