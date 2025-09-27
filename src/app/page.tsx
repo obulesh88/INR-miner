@@ -15,12 +15,11 @@ export default function Home() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
-        // User is signed in, redirect to dashboard.
+        // User is signed in, redirect to dashboard immediately.
         router.replace('/dashboard');
       } else {
-        // No user is signed in, show the login page after a brief delay.
-        // This prevents a flash of the login page if the user is already logged in.
-         setTimeout(() => setIsLoading(false), 250);
+        // No user is signed in, stop loading and show the login page.
+        setIsLoading(false);
       }
     });
 
@@ -46,7 +45,9 @@ export default function Home() {
                         <Skeleton className="h-10 w-full" />
                     </div>
                     <Skeleton className="h-10 w-full" />
-                    <Skeleton className="h-10 w-full" />
+                </div>
+                 <div className="mt-4 text-center text-sm">
+                    <Skeleton className="h-4 w-48 mx-auto" />
                 </div>
             </div>
         </div>
