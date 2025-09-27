@@ -19,6 +19,7 @@ import { auth } from '@/lib/firebase';
 import type { UserData } from '@/services/userData';
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import { getUserData } from '@/services/userData';
+import { useToast } from '@/hooks/use-toast';
 
 export function WalletPage() {
   const [amount, setAmount] = useState('');
@@ -26,6 +27,7 @@ export function WalletPage() {
   const [upiId, setUpiId] = useState('');
   const [userData, setUserData] = useState<UserData | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -47,8 +49,39 @@ export function WalletPage() {
   }, []);
 
   const earningsInInr = userData?.earnings || 0.0;
-  const minBalanceInr = 1;
-  const minBalanceReached = earningsInInr >= minBalanceInr;
+  const minWithdrawalInr = 5;
+  const maxWithdrawalInr = 8;
+  const amountNum = parseFloat(amount);
+
+  const canWithdraw =
+    !isNaN(amountNum) &&
+    amountNum >= minWithdrawalInr &&
+    amountNum <= maxWithdrawalInr &&
+    earningsInInr >= amountNum;
+    
+  let buttonText = 'Withdraw';
+  if (isNaN(amountNum) || amountNum <= 0) {
+      buttonText = 'Enter an amount';
+  } else if (earningsInInr < minWithdrawalInr) {
+      buttonText = `Minimum balance of ₹${minWithdrawalInr} required`;
+  } else if (amountNum < minWithdrawalInr) {
+      buttonText = `Minimum withdrawal is ₹${minWithdrawalInr}`;
+  } else if (amountNum > maxWithdrawalInr) {
+      buttonText = `Maximum withdrawal is ₹${maxWithdrawalInr}`;
+  } else if (amountNum > earningsInInr) {
+      buttonText = 'Insufficient balance';
+  }
+
+
+  const handleWithdraw = () => {
+    // This is a placeholder for the actual withdrawal logic.
+    // In a real application, you would call a server-side function
+    // to process the withdrawal securely.
+    toast({
+      title: 'Withdrawal Request Submitted',
+      description: `Your request to withdraw ₹${amount} has been received. Please allow 24-48 hours for processing.`,
+    });
+  };
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
@@ -109,7 +142,7 @@ export function WalletPage() {
                     <div className="relative">
                       <Input
                         id="amount-paytm"
-                        placeholder="e.g., 1"
+                        placeholder={`e.g., ${minWithdrawalInr}`}
                         type="number"
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
@@ -118,7 +151,7 @@ export function WalletPage() {
                       <IndianRupee className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     </div>
                     <p className="text-xs text-muted-foreground text-right">
-                      Min: ₹{minBalanceInr}
+                      Min: ₹{minWithdrawalInr} | Max: ₹{maxWithdrawalInr}
                     </p>
                   </div>
                 </TabsContent>
@@ -137,7 +170,7 @@ export function WalletPage() {
                     <div className="relative">
                       <Input
                         id="amount-upi"
-                        placeholder="e.g., 1"
+                        placeholder={`e.g., ${minWithdrawalInr}`}
                         type="number"
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
@@ -146,15 +179,13 @@ export function WalletPage() {
                       <IndianRupee className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     </div>
                     <p className="text-xs text-muted-foreground text-right">
-                       Min: ₹{minBalanceInr}
+                       Min: ₹{minWithdrawalInr} | Max: ₹{maxWithdrawalInr}
                     </p>
                   </div>
                 </TabsContent>
               </Tabs>
-              <Button disabled={!minBalanceReached} className="w-full mt-4">
-                {minBalanceReached
-                  ? 'Withdraw'
-                  : 'Minimum Balance Not Reached'}
+              <Button onClick={handleWithdraw} disabled={!canWithdraw} className="w-full mt-4">
+                {buttonText}
               </Button>
             </CardContent>
           </Card>
