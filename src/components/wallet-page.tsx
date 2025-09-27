@@ -12,7 +12,6 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { X, IndianRupee } from 'lucide-react';
 import Link from 'next/link';
 import { auth } from '@/lib/firebase';
@@ -23,7 +22,6 @@ import { useToast } from '@/hooks/use-toast';
 
 export function WalletPage() {
   const [amount, setAmount] = useState('');
-  const [paytmNumber, setPaytmNumber] = useState('');
   const [upiId, setUpiId] = useState('');
   const [userData, setUserData] = useState<UserData | null>(null);
   const [user, setUser] = useState<User | null>(null);
@@ -57,7 +55,8 @@ export function WalletPage() {
     !isNaN(amountNum) &&
     amountNum >= minWithdrawalInr &&
     amountNum <= maxWithdrawalInr &&
-    earningsInInr >= amountNum;
+    earningsInInr >= amountNum &&
+    upiId.trim() !== '';
     
   let buttonText = 'Withdraw';
   if (isNaN(amountNum) || amountNum <= 0) {
@@ -70,6 +69,8 @@ export function WalletPage() {
       buttonText = `Maximum withdrawal is ₹${maxWithdrawalInr}`;
   } else if (amountNum > earningsInInr) {
       buttonText = 'Insufficient balance';
+  } else if (upiId.trim() === '') {
+    buttonText = 'Enter UPI ID';
   }
 
 
@@ -118,44 +119,11 @@ export function WalletPage() {
             <CardHeader>
               <CardTitle>Withdraw Earnings</CardTitle>
               <CardDescription>
-                Withdraw your earnings via Paytm or UPI.
+                Withdraw your earnings via UPI.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Tabs defaultValue="paytm">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="paytm">Paytm</TabsTrigger>
-                  <TabsTrigger value="upi">UPI</TabsTrigger>
-                </TabsList>
-                <TabsContent value="paytm" className="space-y-4 pt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="paytm-number">Paytm Number</Label>
-                    <Input
-                      id="paytm-number"
-                      placeholder="10-digit number"
-                      value={paytmNumber}
-                      onChange={(e) => setPaytmNumber(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="amount-paytm">Amount (INR)</Label>
-                    <div className="relative">
-                      <Input
-                        id="amount-paytm"
-                        placeholder={`e.g., ${minWithdrawalInr}`}
-                        type="number"
-                        value={amount}
-                        onChange={(e) => setAmount(e.target.value)}
-                        className="pl-7"
-                      />
-                      <IndianRupee className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    </div>
-                    <p className="text-xs text-muted-foreground text-right">
-                      Min: ₹{minWithdrawalInr} | Max: ₹{maxWithdrawalInr}
-                    </p>
-                  </div>
-                </TabsContent>
-                <TabsContent value="upi" className="space-y-4 pt-4">
+               <div className="space-y-4 pt-4">
                   <div className="space-y-2">
                     <Label htmlFor="upi-id">UPI ID</Label>
                     <Input
@@ -182,8 +150,7 @@ export function WalletPage() {
                        Min: ₹{minWithdrawalInr} | Max: ₹{maxWithdrawalInr}
                     </p>
                   </div>
-                </TabsContent>
-              </Tabs>
+                </div>
               <Button onClick={handleWithdraw} disabled={!canWithdraw} className="w-full mt-4">
                 {buttonText}
               </Button>
