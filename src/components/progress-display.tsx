@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { Gift, Video } from 'lucide-react';
+import { Gift, Video, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
@@ -29,6 +29,7 @@ export default function ProgressDisplay({
   const router = useRouter();
   
   const [timeToNextClaim, setTimeToNextClaim] = useState(0);
+  const [isAdLoading, setIsAdLoading] = useState(false);
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -99,7 +100,11 @@ export default function ProgressDisplay({
       description: `You've increased your temporary hash speed by ${AD_BONUS_HASH_INCREASE.toFixed(2)} H/s. Watched ${newUserData.adsWatched}/${MAX_ADS_WATCHED} ads today.`,
     });
 
-    window.open('https://enviousgarbage.com/b/3-Vk0.Ph3HpHv/bfmUVNJ_ZtDF0P2tN/jZISzUMtTPg_3tLmTzYv2XMWjBM/xROPD/gn', '_blank');
+    setIsAdLoading(true);
+    setTimeout(() => {
+        window.open('https://enviousgarbage.com/b/3-Vk0.Ph3HpHv/bfmUVNJ_ZtDF0P2tN/jZISzUMtTPg_3tLmTzYv2XMWjBM/xROPD/gn', '_blank');
+        setIsAdLoading(false);
+    }, 5000);
   };
   
   const formatCountdown = (seconds: number) => {
@@ -141,9 +146,17 @@ export default function ProgressDisplay({
               ? `Next Claim in ${formatCountdown(timeToNextClaim)}`
               : 'Claim Daily Bonus'}
           </Button>
-          <Button onClick={handleWatchAd} disabled={userData.adsWatched >= MAX_ADS_WATCHED}>
-            <Video className="mr-2 h-4 w-4" />
-            {userData.adsWatched >= MAX_ADS_WATCHED ? 'Ad Limit Reached' : 'Watch Ad for Bonus'}
+          <Button onClick={handleWatchAd} disabled={userData.adsWatched >= MAX_ADS_WATCHED || isAdLoading}>
+            {isAdLoading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+                <Video className="mr-2 h-4 w-4" />
+            )}
+            {isAdLoading
+              ? 'Loading Ad...'
+              : userData.adsWatched >= MAX_ADS_WATCHED
+              ? 'Ad Limit Reached'
+              : 'Watch Ad for Bonus'}
           </Button>
         </div>
       </CardContent>
