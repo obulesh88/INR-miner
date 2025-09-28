@@ -99,7 +99,7 @@ export default function ProgressDisplay({
       description: `You've increased your temporary hash speed by ${AD_BONUS_HASH_INCREASE.toFixed(2)} H/s. Watched ${newUserData.adsWatched}/${MAX_ADS_WATCHED} ads today.`,
     });
 
-    router.push('/ad');
+    window.open('https://enviousgarbage.com/b/3-Vk0.Ph3HpHv/bfmUVNJ_ZtDF0P2tN/jZISzUMtTPg_3tLmTzYv2XMWjBM/xROPD/gn', '_blank');
   };
   
   const formatCountdown = (seconds: number) => {
