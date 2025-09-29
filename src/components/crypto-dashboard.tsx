@@ -57,7 +57,6 @@ export function CryptoDashboard() {
     if (firebaseData) {
       dataToSet = firebaseData;
     } else {
-      // If no data or old data format, create fresh user data. This resets the user.
       const newUserData = {
         ...initialUserData,
         lastAdResetDate: new Date().toISOString().split('T')[0],
@@ -67,38 +66,37 @@ export function CryptoDashboard() {
       dataToSet = newUserData;
     }
 
-    // Check if it's time to reset bonus hash power
     const now = Date.now();
-    const timeSinceLastReset = now - (dataToSet.lastHashResetTime || 0);
-    const hoursSinceLastReset = timeSinceLastReset / (1000 * 60 * 60);
+    const timeSinceLastHashReset = now - (dataToSet.lastHashResetTime || 0);
+    const hoursSinceLastHashReset = timeSinceLastHashReset / (1000 * 60 * 60);
 
-    if (hoursSinceLastReset >= HASH_POWER_RESET_HOURS) {
+    if (hoursSinceLastHashReset >= HASH_POWER_RESET_HOURS) {
       dataToSet = {
         ...dataToSet,
-        hashSpeed: 0, // Reset all hash power
+        hashSpeed: 0,
         lastHashResetTime: now,
       };
-      // Immediately update Firebase with the reset
-      await updateUserData(currentUser.uid, { hashSpeed: 0, lastHashResetTime: now });
+       await updateUserData(currentUser.uid, { hashSpeed: 0, lastHashResetTime: now });
     }
-
-    setUserData(dataToSet);
-    localStorage.setItem(`userData-${currentUser.uid}`, JSON.stringify(dataToSet));
-  }, []);
-  
-  const handleUserDataChange = useCallback((newUserData: UserData) => {
-    if (!user) return;
 
     const today = new Date().toISOString().split('T')[0];
-    const finalData = { ...newUserData };
-    if (finalData.lastAdResetDate !== today) {
-        finalData.adsWatched = 0;
-        finalData.lastAdResetDate = today;
+    if(dataToSet.lastAdResetDate !== today) {
+        dataToSet.adsWatched = 0;
+        dataToSet.lastAdResetDate = today;
     }
+
+
+    setUserData(dataToSet);
+  }, []);
+  
+  const handleUserDataChange = useCallback((newUserData: Partial<UserData>) => {
+    if (!user) return;
     
-    setUserData(finalData);
-    localStorage.setItem(`userData-${user.uid}`, JSON.stringify(finalData));
-    updateUserData(user.uid, finalData);
+    setUserData(prev => {
+        const updatedData = {...prev, ...newUserData};
+        updateUserData(user.uid, updatedData);
+        return updatedData;
+    });
 
   }, [user]);
 
@@ -113,6 +111,7 @@ export function CryptoDashboard() {
         ]).finally(() => setIsLoading(false));
       } else {
         setUserData(initialUserData);
+        setData({});
         setIsLoading(false);
       }
     });
@@ -120,36 +119,30 @@ export function CryptoDashboard() {
   }, [loadUserData, fetchMarketData]);
 
   useEffect(() => {
-    const interval = setInterval(fetchMarketData, 60000); 
-    return () => clearInterval(interval);
+    const marketDataInterval = setInterval(fetchMarketData, 60000); 
+    return () => clearInterval(marketDataInterval);
   }, [fetchMarketData]);
   
   useEffect(() => {
     if (user && userData.hashSpeed > 0 && data[selectedCryptoId]) {
       const inrPerSecond = 0.00001; 
       const currentHashSpeed = userData.hashSpeed;
-      const interval = setInterval(() => {
-        setUserData(prev => {
-            const newEarnings = prev.earnings + inrPerSecond * currentHashSpeed;
-            const updatedData = {...prev, earnings: newEarnings };
-            localStorage.setItem(`userData-${user.uid}`, JSON.stringify(updatedData));
-            return updatedData;
-        });
+      const earningsInterval = setInterval(() => {
+        setUserData(prev => ({...prev, earnings: prev.earnings + inrPerSecond * currentHashSpeed }));
       }, 1000);
-      return () => clearInterval(interval);
+      return () => clearInterval(earningsInterval);
     }
   }, [user, userData.hashSpeed, data, selectedCryptoId]);
 
   useEffect(() => {
     if(!user) return;
     const saveInterval = setInterval(() => {
-        const localDataStr = localStorage.getItem(`userData-${user.uid}`);
-        if(localDataStr) {
-            updateUserData(user.uid, JSON.parse(localDataStr));
+        if(userData.earnings > 0) {
+            updateUserData(user.uid, { earnings: userData.earnings });
         }
-    }, 15000);
+    }, 15000); // Save earnings every 15 seconds
     return () => clearInterval(saveInterval);
-  }, [user]);
+  }, [user, userData.earnings]);
 
   const selectedCrypto = data[selectedCryptoId];
   

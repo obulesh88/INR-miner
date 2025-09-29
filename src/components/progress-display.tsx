@@ -13,7 +13,7 @@ import { useRouter } from 'next/navigation';
 
 interface ProgressDisplayProps {
   userData: UserData;
-  onUserDataChange: (newUserData: UserData) => void;
+  onUserDataChange: (newUserData: Partial<UserData>) => void;
 }
 
 const DAILY_BONUS_HASH_INCREASE = 0.02;
@@ -61,12 +61,11 @@ export default function ProgressDisplay({
     if(timeToNextClaim > 0) return;
 
     const now = Date.now();
-    const newUserData: UserData = {
-        ...userData,
-        hashSpeed: (userData.hashSpeed || 0) + DAILY_BONUS_HASH_INCREASE,
+    const newHashSpeed = (userData.hashSpeed || 0) + DAILY_BONUS_HASH_INCREASE;
+    onUserDataChange({
+        hashSpeed: newHashSpeed,
         lastBonusClaimTime: now,
-    };
-    onUserDataChange(newUserData);
+    });
     setTimeToNextClaim(CLAIM_COOLDOWN_SECONDS);
     toast({
       title: 'Daily Bonus Claimed!',
@@ -88,23 +87,24 @@ export default function ProgressDisplay({
       return;
     }
     
-    const newUserData: UserData = {
-        ...userData,
-        hashSpeed: (userData.hashSpeed || 0) + AD_BONUS_HASH_INCREASE,
-        adsWatched: userData.adsWatched + 1,
-    };
-    onUserDataChange(newUserData);
+    const newAdsWatched = userData.adsWatched + 1;
+    const newHashSpeed = (userData.hashSpeed || 0) + AD_BONUS_HASH_INCREASE;
+    
+    onUserDataChange({
+        hashSpeed: newHashSpeed,
+        adsWatched: newAdsWatched,
+    });
     
     toast({
       title: 'Ad Watched!',
-      description: `You've increased your temporary hash speed by ${AD_BONUS_HASH_INCREASE.toFixed(2)} H/s. Watched ${newUserData.adsWatched}/${MAX_ADS_WATCHED} ads today.`,
+      description: `You've increased your temporary hash speed by ${AD_BONUS_HASH_INCREASE.toFixed(2)} H/s. Watched ${newAdsWatched}/${MAX_ADS_WATCHED} ads today.`,
     });
 
     setIsAdLoading(true);
     setTimeout(() => {
-        window.open('https://enviousgarbage.com/b/3-Vk0.Ph3HpHv/bfmUVNJ_ZtDF0P2tN/jZISzUMtTPg_3tLmTzYv2XMWjBM/xROPD/gn', '_blank');
+        router.push('/ad');
         setIsAdLoading(false);
-    }, 5000);
+    }, 1000);
   };
   
   const formatCountdown = (seconds: number) => {

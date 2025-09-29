@@ -29,11 +29,11 @@ export default function AdPage() {
           <div className="flex flex-col items-center gap-4">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
             <p className="text-muted-foreground">
-              Your ad is loading...
+              You are being redirected...
             </p>
             <p className="text-2xl font-bold">{countdown}</p>
             <p className="text-sm text-muted-foreground">
-              You will be redirected automatically.
+              You will be returned to the dashboard automatically.
             </p>
           </div>
         </CardContent>

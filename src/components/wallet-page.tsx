@@ -25,22 +25,21 @@ export function WalletPage() {
   const [upiId, setUpiId] = useState('');
   const [userData, setUserData] = useState<UserData | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
-        // Load from localStorage first
-        const localDataStr = localStorage.getItem(`userData-${currentUser.uid}`);
-        if (localDataStr) {
-          setUserData(JSON.parse(localDataStr));
-        }
-        // Then get from firebase for latest
+        setIsLoading(true);
         const firebaseData = await getUserData(currentUser.uid);
         if (firebaseData) {
           setUserData(firebaseData);
         }
+        setIsLoading(false);
+      } else {
+        setIsLoading(false);
       }
     });
     return () => unsubscribe();
@@ -75,9 +74,6 @@ export function WalletPage() {
 
 
   const handleWithdraw = () => {
-    // This is a placeholder for the actual withdrawal logic.
-    // In a real application, you would call a server-side function
-    // to process the withdrawal securely.
     toast({
       title: 'Withdrawal Request Submitted',
       description: `Your request to withdraw ₹${amount} has been received. Please allow 24-48 hours for processing.`,
