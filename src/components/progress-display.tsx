@@ -16,7 +16,7 @@ interface ProgressDisplayProps {
   onUserDataChange: (newUserData: Partial<UserData>) => void;
 }
 
-const AD_EARNING_INCREASE = 0.02;
+const AD_EARNING_INCREASE = 0.003;
 const MAX_ADS_WATCHED = 44;
 
 export default function ProgressDisplay({
@@ -54,7 +54,7 @@ export default function ProgressDisplay({
     
     toast({
       title: 'Ad Watched!',
-      description: `You've earned ₹${AD_EARNING_INCREASE.toFixed(2)}. Watched ${newAdsWatched}/${MAX_ADS_WATCHED} ads today.`,
+      description: `You've earned ₹${AD_EARNING_INCREASE.toFixed(3)}. Watched ${newAdsWatched}/${MAX_ADS_WATCHED} ads today.`,
     });
 
     setTimeout(() => {
