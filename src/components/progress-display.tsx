@@ -2,11 +2,11 @@
 'use client';
 
 import type { UserData } from '@/services/userData';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { Gift, Video, Loader2 } from 'lucide-react';
+import { Video, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
@@ -16,10 +16,8 @@ interface ProgressDisplayProps {
   onUserDataChange: (newUserData: Partial<UserData>) => void;
 }
 
-const DAILY_BONUS_HASH_INCREASE = 0.02;
-const AD_BONUS_HASH_INCREASE = 0.02;
+const AD_EARNING_INCREASE = 0.02;
 const MAX_ADS_WATCHED = 44;
-const CLAIM_COOLDOWN_SECONDS = 24 * 60 * 60; // 24 hours
 
 export default function ProgressDisplay({
   userData,
@@ -28,50 +26,7 @@ export default function ProgressDisplay({
   const { toast } = useToast();
   const router = useRouter();
   
-  const [timeToNextClaim, setTimeToNextClaim] = useState(0);
   const [isAdLoading, setIsAdLoading] = useState(false);
-
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (userData.lastBonusClaimTime) {
-      const now = Date.now();
-      const timePassed = Math.floor((now - userData.lastBonusClaimTime) / 1000);
-      const remainingTime = CLAIM_COOLDOWN_SECONDS - timePassed;
-
-      if (remainingTime > 0) {
-        setTimeToNextClaim(remainingTime);
-        timer = setInterval(() => {
-          setTimeToNextClaim((prev) => (prev > 0 ? prev - 1 : 0));
-        }, 1000);
-      } else {
-        setTimeToNextClaim(0);
-      }
-    } else {
-        setTimeToNextClaim(0);
-    }
-    return () => clearInterval(timer);
-  }, [userData.lastBonusClaimTime]);
-
-
-  const handleClaimBonus = () => {
-    if (!auth.currentUser) {
-      router.push('/login');
-      return;
-    }
-    if(timeToNextClaim > 0) return;
-
-    const now = Date.now();
-    const newHashSpeed = (userData.hashSpeed || 0) + DAILY_BONUS_HASH_INCREASE;
-    onUserDataChange({
-        hashSpeed: newHashSpeed,
-        lastBonusClaimTime: now,
-    });
-    setTimeToNextClaim(CLAIM_COOLDOWN_SECONDS);
-    toast({
-      title: 'Daily Bonus Claimed!',
-      description: `You've increased your temporary hash speed by ${DAILY_BONUS_HASH_INCREASE.toFixed(2)} H/s.`,
-    });
-  };
 
   const handleWatchAd = () => {
      if (!auth.currentUser) {
@@ -86,35 +41,27 @@ export default function ProgressDisplay({
       });
       return;
     }
-    
+
+    setIsAdLoading(true);
+
     const newAdsWatched = userData.adsWatched + 1;
-    const newHashSpeed = (userData.hashSpeed || 0) + AD_BONUS_HASH_INCREASE;
+    const newEarnings = (userData.earnings || 0) + AD_EARNING_INCREASE;
     
     onUserDataChange({
-        hashSpeed: newHashSpeed,
+        earnings: newEarnings,
         adsWatched: newAdsWatched,
     });
     
     toast({
       title: 'Ad Watched!',
-      description: `You've increased your temporary hash speed by ${AD_BONUS_HASH_INCREASE.toFixed(2)} H/s. Watched ${newAdsWatched}/${MAX_ADS_WATCHED} ads today.`,
+      description: `You've earned ₹${AD_EARNING_INCREASE.toFixed(2)}. Watched ${newAdsWatched}/${MAX_ADS_WATCHED} ads today.`,
     });
 
-    setIsAdLoading(true);
     setTimeout(() => {
-        router.push('/ad');
+        window.open('https://enviousgarbage.com/b/3-Vk0.Ph3HpHv/bfmUVNJ_ZtDF0P2tN/jZISzUMtTPg_3tLmTzYv2XMWjBM/xROPD/gn', '_blank');
         setIsAdLoading(false);
-    }, 1000);
+    }, 5000);
   };
-  
-  const formatCountdown = (seconds: number) => {
-    const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
-    const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
-    const s = (seconds % 60).toString().padStart(2, '0');
-    return `${h}:${m}:${s}`;
-  };
-  
-  const dailyBonusProgress = timeToNextClaim > 0 ? (1 - timeToNextClaim / CLAIM_COOLDOWN_SECONDS) * 100 : 100;
   
   return (
     <Card>
@@ -123,14 +70,10 @@ export default function ProgressDisplay({
           <h3 className="text-lg font-bold">Daily Tasks</h3>
         </div>
         <p className="text-sm text-muted-foreground mt-1">
-          Complete daily tasks to increase your temporary bonus hash speed for 24 hours.
+          Complete daily tasks to increase your earnings.
         </p>
 
-        <div className="grid grid-cols-2 gap-4 mt-6">
-          <div>
-            <p className="text-xs text-muted-foreground">Daily Bonus</p>
-            <Progress value={dailyBonusProgress} className="h-1 mt-1" />
-          </div>
+        <div className="grid grid-cols-1 gap-4 mt-6">
           <div>
             <p className="text-xs text-muted-foreground">
               Ads Watched Today: {userData.adsWatched}/{MAX_ADS_WATCHED}
@@ -140,12 +83,6 @@ export default function ProgressDisplay({
         </div>
 
         <div className="flex flex-col gap-3 mt-6">
-          <Button onClick={handleClaimBonus} disabled={timeToNextClaim > 0}>
-            <Gift className="mr-2 h-4 w-4" />
-            {timeToNextClaim > 0
-              ? `Next Claim in ${formatCountdown(timeToNextClaim)}`
-              : 'Claim Daily Bonus'}
-          </Button>
           <Button onClick={handleWatchAd} disabled={userData.adsWatched >= MAX_ADS_WATCHED || isAdLoading}>
             {isAdLoading ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -156,7 +93,7 @@ export default function ProgressDisplay({
               ? 'Loading Ad...'
               : userData.adsWatched >= MAX_ADS_WATCHED
               ? 'Ad Limit Reached'
-              : 'Watch Ad for Bonus'}
+              : 'Watch Ad to Earn'}
           </Button>
         </div>
       </CardContent>

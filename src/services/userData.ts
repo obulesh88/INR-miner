@@ -1,14 +1,11 @@
 
-import { doc, getDoc, setDoc, updateDoc, type Timestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 export interface UserData {
-  hashSpeed: number; // All hash speed is now temporary
   earnings: number;
-  lastBonusClaimTime: number | null;
   adsWatched: number;
   lastAdResetDate: string | null;
-  lastHashResetTime: number | null; // Timestamp of the last hash power reset
 }
 
 export const getUserData = async (userId: string): Promise<UserData | null> => {
@@ -18,9 +15,13 @@ export const getUserData = async (userId: string): Promise<UserData | null> => {
 
     if (docSnap.exists()) {
       const data = docSnap.data();
-      // Ensure data structure is up-to-date, reset if old structure is detected
-      if (data.baseHashSpeed !== undefined || data.bonusHashSpeed !== undefined) {
-          return null; // This will trigger a reset in the dashboard
+      // Backward compatibility check for old data structure
+      if (data.hashSpeed !== undefined || data.lastBonusClaimTime !== undefined) {
+        return {
+            earnings: data.earnings || 0,
+            adsWatched: data.adsWatched || 0,
+            lastAdResetDate: data.lastAdResetDate || null
+        };
       }
       return data as UserData;
     } else {
