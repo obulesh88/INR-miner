@@ -2,10 +2,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Home, Users, Wallet, User, Mail } from 'lucide-react';
+import { Home, Users, Wallet, User, Mail, LogOut } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
+  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
@@ -14,8 +15,11 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useRouter, usePathname } from 'next/navigation';
 import { auth } from '@/lib/firebase';
+import { signOut } from 'firebase/auth';
 import type { User as FirebaseUser } from 'firebase/auth';
 import { Skeleton } from './ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
+import { Button } from './ui/button';
 
 const navItems = [
   { icon: Home, label: 'Home', href: '/dashboard' },
@@ -27,6 +31,7 @@ const navItems = [
 export default function BottomNav() {
   const router = useRouter();
   const pathname = usePathname();
+  const { toast } = useToast();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -44,6 +49,24 @@ export default function BottomNav() {
       router.push(item.href);
     } else if (item.label === 'Profile') {
       setIsProfileOpen(true);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      toast({
+        title: 'Logged Out',
+        description: 'You have been successfully logged out.',
+      });
+      setIsProfileOpen(false);
+      router.push('/login');
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Logout Failed',
+        description: 'Something went wrong. Please try again.',
+      });
     }
   };
 
@@ -87,9 +110,11 @@ export default function BottomNav() {
             )}
           </div>
           <AlertDialogFooter>
-            <AlertDialogAction onClick={() => setIsProfileOpen(false)}>
-              Close
-            </AlertDialogAction>
+             <AlertDialogCancel>Close</AlertDialogCancel>
+            <Button variant="destructive" onClick={handleLogout}>
+              <LogOut className="mr-2 h-4 w-4" />
+              Logout
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
