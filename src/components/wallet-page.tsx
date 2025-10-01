@@ -46,8 +46,8 @@ export function WalletPage() {
   }, []);
 
   const earningsInInr = userData?.earnings || 0.0;
-  const minWithdrawalInr = 5;
-  const maxWithdrawalInr = 8;
+  const minWithdrawalInr = 1;
+  const maxWithdrawalInr = 10;
   const amountNum = parseFloat(amount);
 
   const canWithdraw =
