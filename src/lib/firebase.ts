@@ -20,27 +20,35 @@ const auth = getAuth(app);
 
 // Initialize Firestore with offline persistence
 let db: Firestore;
+let persistenceEnabled = false;
 
 if (typeof window !== 'undefined') {
-  // Client-side initialization
   try {
     db = getFirestore(app);
-    enableIndexedDbPersistence(db);
-  } catch (error: any) {
-    if (error.code === 'failed-precondition') {
-      console.warn('Firestore persistence failed: Multiple tabs open.');
-      // This happens when multiple tabs are open. Persistence will work in the first tab.
-      // We can still get a db instance, but it will be without persistence.
-      db = getFirestore(app);
-    } else if (error.code === 'unimplemented') {
-      console.warn('Firestore persistence is not available in this browser.');
-      // Persistence is not supported in this browser.
-      db = getFirestore(app);
+    if (!persistenceEnabled) {
+      enableIndexedDbPersistence(db)
+        .then(() => {
+          persistenceEnabled = true;
+          console.log("Firestore persistence enabled");
+        })
+        .catch((error: any) => {
+          if (error.code === 'failed-precondition') {
+            console.warn('Firestore persistence failed: Multiple tabs open. Persistence will be enabled in one tab only.');
+          } else if (error.code === 'unimplemented') {
+            console.warn('Firestore persistence is not available in this browser.');
+          }
+        });
     }
+  } catch (e) {
+    console.error("Error initializing Firestore on the client:", e);
+    // fallback to a non-persistent firestore instance
+    db = getFirestore(app);
   }
 } else {
   // Server-side initialization
-  db = getFirestore(app);
+  db = initializeFirestore(app, {
+    // For server-side rendering, you might not need persistence
+  });
 }
 
 
