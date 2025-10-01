@@ -24,27 +24,39 @@ export function CryptoDashboard() {
   const [user, setUser] = useState<User | null>(null);
   const [userData, setUserData] = useState<UserData>(initialUserData);
 
+  const getToday = () => new Date().toISOString().split('T')[0];
+
   const loadUserData = useCallback(async (currentUser: User) => {
     let firebaseData = await getUserData(currentUser.uid);
     let dataToSet: UserData;
+
+    const today = getToday();
+    const localAdsWatchedRaw = localStorage.getItem(`adsWatched_${currentUser.uid}`);
+    const localAdsData = localAdsWatchedRaw ? JSON.parse(localAdsWatchedRaw) : { count: 0, date: null };
 
     if (firebaseData) {
       dataToSet = firebaseData;
     } else {
       const newUserData: UserData = {
         ...initialUserData,
-        lastAdResetDate: new Date().toISOString().split('T')[0],
+        lastAdResetDate: today,
       };
       await createUserData(currentUser.uid, newUserData);
       dataToSet = newUserData;
     }
-
-    const today = new Date().toISOString().split('T')[0];
-    if(dataToSet.lastAdResetDate !== today) {
-        dataToSet.adsWatched = 0;
-        dataToSet.lastAdResetDate = today;
-        await updateUserData(currentUser.uid, { adsWatched: 0, lastAdResetDate: today });
+    
+    if (dataToSet.lastAdResetDate !== today) {
+      dataToSet.adsWatched = 0;
+      dataToSet.lastAdResetDate = today;
+      await updateUserData(currentUser.uid, { adsWatched: 0, lastAdResetDate: today });
     }
+
+    if (localAdsData.date === today && localAdsData.count > dataToSet.adsWatched) {
+        dataToSet.adsWatched = localAdsData.count;
+    } else {
+        localStorage.setItem(`adsWatched_${currentUser.uid}`, JSON.stringify({ count: dataToSet.adsWatched, date: today }));
+    }
+
 
     setUserData(dataToSet);
   }, []);
@@ -55,6 +67,11 @@ export function CryptoDashboard() {
     setUserData(prev => {
         const updatedData = {...prev, ...newUserData};
         updateUserData(user.uid, updatedData);
+
+        if(newUserData.adsWatched !== undefined) {
+            localStorage.setItem(`adsWatched_${user.uid}`, JSON.stringify({ count: newUserData.adsWatched, date: getToday() }));
+        }
+
         return updatedData;
     });
 
