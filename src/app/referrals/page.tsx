@@ -32,13 +32,16 @@ export default function ReferralsPage() {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [referralLink, setReferralLink] = useState('');
+  const [fullReferralLink, setFullReferralLink] = useState('');
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
-        const link = `https://or-virid.vercel.app/app/inr-miner?ref=${currentUser.uid}`;
-        setReferralLink(link);
+        const fullLink = `https://or-virid.vercel.app/app/inr-miner?ref=${currentUser.uid}`;
+        const displayLink = `inr-miner?ref=${currentUser.uid}`;
+        setFullReferralLink(fullLink);
+        setReferralLink(displayLink);
       }
       setIsLoading(false);
     });
@@ -46,8 +49,8 @@ export default function ReferralsPage() {
   }, []);
   
   const handleCopy = () => {
-    if (!referralLink) return;
-    navigator.clipboard.writeText(referralLink);
+    if (!fullReferralLink) return;
+    navigator.clipboard.writeText(fullReferralLink);
     toast({
       title: 'Link Copied!',
       description: 'Your referral link has been copied to your clipboard.',
@@ -55,8 +58,8 @@ export default function ReferralsPage() {
   };
 
   const handleShareOnWhatsApp = () => {
-    if (!referralLink) return;
-    const message = encodeURIComponent(`Hey! Check out this app and earn rewards. Use my referral link: ${referralLink}`);
+    if (!fullReferralLink) return;
+    const message = encodeURIComponent(`Hey! Check out this app and earn rewards. Use my referral link: ${fullReferralLink}`);
     window.open(`https://wa.me/?text=${message}`, '_blank');
   };
 
