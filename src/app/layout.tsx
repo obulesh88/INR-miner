@@ -4,6 +4,7 @@ import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 import { useEffect } from 'react';
+import { UserDataProvider } from '@/contexts/user-data-context';
 
 export default function RootLayout({
   children,
@@ -34,7 +35,9 @@ export default function RootLayout({
         <meta name="theme-color" content="#1976d2" />
       </head>
       <body className="font-body antialiased pb-20 md:pb-0">
-        {children}
+        <UserDataProvider>
+          {children}
+        </UserDataProvider>
         <Toaster />
       </body>
     </html>

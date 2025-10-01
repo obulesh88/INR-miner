@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -12,38 +12,17 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { X, IndianRupee } from 'lucide-react';
+import { X, IndianRupee, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { auth } from '@/lib/firebase';
-import type { UserData } from '@/services/userData';
-import { onAuthStateChanged, type User } from 'firebase/auth';
-import { getUserData } from '@/services/userData';
 import { useToast } from '@/hooks/use-toast';
+import { useUserData } from '@/contexts/user-data-context';
+import { Skeleton } from './ui/skeleton';
 
 export function WalletPage() {
   const [amount, setAmount] = useState('');
   const [upiId, setUpiId] = useState('');
-  const [userData, setUserData] = useState<UserData | null>(null);
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { userData, isLoading } = useUserData();
   const { toast } = useToast();
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
-      if (currentUser) {
-        setIsLoading(true);
-        const firebaseData = await getUserData(currentUser.uid);
-        if (firebaseData) {
-          setUserData(firebaseData);
-        }
-        setIsLoading(false);
-      } else {
-        setIsLoading(false);
-      }
-    });
-    return () => unsubscribe();
-  }, []);
 
   const earningsInInr = userData?.earnings || 0.0;
   const minWithdrawalInr = 1;
@@ -97,17 +76,27 @@ export function WalletPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center gap-2">
-                <IndianRupee className="h-8 w-8" />
-                <div>
-                  <p className="text-2xl font-bold">
-                    ₹{(earningsInInr || 0).toFixed(5)}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Indian Rupees
-                  </p>
+              {isLoading ? (
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-8 w-8" />
+                  <div>
+                     <Skeleton className="h-7 w-32 mb-2" />
+                     <Skeleton className="h-4 w-24" />
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <IndianRupee className="h-8 w-8" />
+                  <div>
+                    <p className="text-2xl font-bold">
+                      ₹{earningsInInr.toFixed(5)}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Indian Rupees
+                    </p>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -127,6 +116,7 @@ export function WalletPage() {
                       placeholder="yourname@okhdfcbank"
                       value={upiId}
                       onChange={(e) => setUpiId(e.target.value)}
+                      disabled={isLoading}
                     />
                   </div>
                   <div className="space-y-2">
@@ -139,6 +129,7 @@ export function WalletPage() {
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
                         className="pl-7"
+                        disabled={isLoading}
                       />
                       <IndianRupee className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     </div>
@@ -147,8 +138,9 @@ export function WalletPage() {
                     </p>
                   </div>
                 </div>
-              <Button onClick={handleWithdraw} disabled={!canWithdraw} className="w-full mt-4">
-                {buttonText}
+              <Button onClick={handleWithdraw} disabled={!canWithdraw || isLoading} className="w-full mt-4">
+                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                {isLoading ? 'Loading...' : buttonText}
               </Button>
             </CardContent>
           </Card>

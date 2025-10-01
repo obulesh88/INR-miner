@@ -1,7 +1,6 @@
 
 'use client';
 
-import type { UserData } from '@/services/userData';
 import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -10,29 +9,26 @@ import { Video, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
-
-interface ProgressDisplayProps {
-  userData: UserData;
-  onUserDataChange: (newUserData: Partial<UserData>) => void;
-}
+import { useUserData } from '@/contexts/user-data-context';
 
 const AD_EARNING_INCREASE = 0.003;
 const MAX_ADS_WATCHED = 44;
 
-export default function ProgressDisplay({
-  userData,
-  onUserDataChange,
-}: ProgressDisplayProps) {
+export default function ProgressDisplay() {
   const { toast } = useToast();
   const router = useRouter();
-  
+  const { userData, updateUserData: onUserDataChange, user } = useUserData();
+
   const [isAdLoading, setIsAdLoading] = useState(false);
 
   const handleWatchAd = () => {
-     if (!auth.currentUser) {
+    if (!user) {
       router.push('/login');
       return;
     }
+
+    if (!userData) return;
+
     if (userData.adsWatched >= MAX_ADS_WATCHED) {
       toast({
         variant: 'destructive',
@@ -46,23 +42,30 @@ export default function ProgressDisplay({
 
     const newAdsWatched = userData.adsWatched + 1;
     const newEarnings = (userData.earnings || 0) + AD_EARNING_INCREASE;
-    
+
     onUserDataChange({
-        earnings: newEarnings,
-        adsWatched: newAdsWatched,
+      earnings: newEarnings,
+      adsWatched: newAdsWatched,
     });
-    
+
     toast({
       title: 'Ad Watched!',
-      description: `You've earned ₹${AD_EARNING_INCREASE.toFixed(3)}. Watched ${newAdsWatched}/${MAX_ADS_WATCHED} ads today.`,
+      description: `You've earned ₹${AD_EARNING_INCREASE.toFixed(
+        3
+      )}. Watched ${newAdsWatched}/${MAX_ADS_WATCHED} ads today.`,
     });
 
     setTimeout(() => {
-        window.open('https://enviousgarbage.com/b/3-Vk0.Ph3HpHv/bfmUVNJ_ZtDF0P2tN/jZISzUMtTPg_3tLmTzYv2XMWjBM/xROPD/gn', '_blank');
-        setIsAdLoading(false);
+      window.open(
+        'https://enviousgarbage.com/b/3-Vk0.Ph3HpHv/bfmUVNJ_ZtDF0P2tN/jZISzUMtTPg_3tLmTzYv2XMWjBM/xROPD/gn',
+        '_blank'
+      );
+      setIsAdLoading(false);
     }, 5000);
   };
-  
+
+  const adsWatched = userData?.adsWatched ?? 0;
+
   return (
     <Card>
       <CardContent className="p-4">
@@ -76,22 +79,28 @@ export default function ProgressDisplay({
         <div className="grid grid-cols-1 gap-4 mt-6">
           <div>
             <p className="text-xs text-muted-foreground">
-              Ads Watched Today: {userData.adsWatched}/{MAX_ADS_WATCHED}
+              Ads Watched Today: {adsWatched}/{MAX_ADS_WATCHED}
             </p>
-             <Progress value={(userData.adsWatched / MAX_ADS_WATCHED) * 100} className="h-1 mt-1" />
+            <Progress
+              value={(adsWatched / MAX_ADS_WATCHED) * 100}
+              className="h-1 mt-1"
+            />
           </div>
         </div>
 
         <div className="flex flex-col gap-3 mt-6">
-          <Button onClick={handleWatchAd} disabled={userData.adsWatched >= MAX_ADS_WATCHED || isAdLoading}>
+          <Button
+            onClick={handleWatchAd}
+            disabled={adsWatched >= MAX_ADS_WATCHED || isAdLoading}
+          >
             {isAdLoading ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
-                <Video className="mr-2 h-4 w-4" />
+              <Video className="mr-2 h-4 w-4" />
             )}
             {isAdLoading
               ? 'Loading Ad...'
-              : userData.adsWatched >= MAX_ADS_WATCHED
+              : adsWatched >= MAX_ADS_WATCHED
               ? 'Ad Limit Reached'
               : 'Watch Ad to Earn'}
           </Button>
