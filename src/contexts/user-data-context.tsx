@@ -42,7 +42,13 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
 
   const getToday = () => new Date().toISOString().split('T')[0];
 
-  const loadUserData = useCallback(async () => {
+  const loadUserData = useCallback(async (currentUser: User) => {
+    if (!currentUser) {
+      setUserData(null);
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     let firebaseData = await getUserData();
     let dataToSet: UserData;
@@ -50,7 +56,6 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
     const today = getToday();
 
     if (firebaseData) {
-      // If the last reset date is not today, reset adsWatched
       if (firebaseData.lastAdResetDate !== today) {
         firebaseData.adsWatched = 0;
         firebaseData.lastAdResetDate = today;
@@ -58,7 +63,6 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
       }
       dataToSet = firebaseData;
     } else {
-      // If no data exists, create it
       const newUserData: UserData = {
         ...initialUserData,
         lastAdResetDate: today,
@@ -73,7 +77,8 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
 
   const updateUserData = useCallback(
     async (newUserData: Partial<UserData>) => {
-      if (!user || !userData) return;
+      const currentUser = auth.currentUser;
+      if (!currentUser || !userData) return;
   
       const updatedData = { ...userData, ...newUserData };
       setUserData(updatedData);
@@ -84,14 +89,14 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
         console.error("Failed to update user data in Firebase:", error);
       }
     },
-    [user, userData]
+    [userData]
   );
   
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
-        loadUserData();
+        loadUserData(currentUser);
       } else {
         setUserData(null);
         setIsLoading(false);
