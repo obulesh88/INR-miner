@@ -28,7 +28,7 @@ interface UserDataContextType {
   user: User | null;
   userData: UserData | null;
   isLoading: boolean;
-  updateUserData: (newUserData: Partial<UserData>) => void;
+  updateUserData: (newUserData: Partial<UserData>) => Promise<void>;
 }
 
 const UserDataContext = createContext<UserDataContextType | undefined>(
@@ -43,20 +43,22 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
   const getToday = () => new Date().toISOString().split('T')[0];
 
   const loadUserData = useCallback(async (currentUser: User) => {
+    setIsLoading(true);
     let firebaseData = await getUserData(currentUser.uid);
     let dataToSet: UserData;
 
     const today = getToday();
-    const localAdsWatchedRaw = localStorage.getItem(
-      `adsWatched_${currentUser.uid}`
-    );
-    const localAdsData = localAdsWatchedRaw
-      ? JSON.parse(localAdsWatchedRaw)
-      : { count: 0, date: null };
 
     if (firebaseData) {
+      // If the last reset date is not today, reset adsWatched
+      if (firebaseData.lastAdResetDate !== today) {
+        firebaseData.adsWatched = 0;
+        firebaseData.lastAdResetDate = today;
+        await updateFirebaseUserData(currentUser.uid, { adsWatched: 0, lastAdResetDate: today });
+      }
       dataToSet = firebaseData;
     } else {
+      // If no data exists, create it
       const newUserData: UserData = {
         ...initialUserData,
         lastAdResetDate: today,
@@ -65,79 +67,40 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
       dataToSet = newUserData;
     }
 
-    if (dataToSet.lastAdResetDate !== today) {
-      dataToSet.adsWatched = 0;
-      dataToSet.lastAdResetDate = today;
-      await updateFirebaseUserData(currentUser.uid, {
-        adsWatched: 0,
-        lastAdResetDate: today,
-      });
-    }
-
-    if (localAdsData.date === today && localAdsData.count > dataToSet.adsWatched) {
-      dataToSet.adsWatched = localAdsData.count;
-       await updateFirebaseUserData(currentUser.uid, { adsWatched: localAdsData.count });
-    } else {
-      localStorage.setItem(
-        `adsWatched_${currentUser.uid}`,
-        JSON.stringify({ count: dataToSet.adsWatched, date: today })
-      );
-    }
-
     setUserData(dataToSet);
+    setIsLoading(false);
   }, []);
 
   const updateUserData = useCallback(
-    (newUserData: Partial<UserData>) => {
-      if (!user) return;
+    async (newUserData: Partial<UserData>) => {
+      if (!user || !userData) return;
   
-      const today = getToday();
-  
-      setUserData((prev) => {
-        const updatedData = { ...(prev || initialUserData), ...newUserData };
-        
-        // Immediately update Firebase with the new data
-        updateFirebaseUserData(user.uid, newUserData);
-  
-        // Also update local storage for adsWatched
-        if (newUserData.adsWatched !== undefined) {
-          localStorage.setItem(
-            `adsWatched_${user.uid}`,
-            JSON.stringify({ count: newUserData.adsWatched, date: today })
-          );
-        }
-  
-        return updatedData;
-      });
+      const updatedData = { ...userData, ...newUserData };
+      setUserData(updatedData);
+
+      try {
+        await updateFirebaseUserData(user.uid, newUserData);
+      } catch (error) {
+        console.error("Failed to update user data in Firebase:", error);
+        // Optionally, revert state or show an error to the user
+        // For now, we'll just log it. The state is already updated optimistically.
+      }
     },
-    [user]
+    [user, userData]
   );
   
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
-        setIsLoading(true);
-        loadUserData(currentUser).finally(() => setIsLoading(false));
+        loadUserData(currentUser);
       } else {
-        setUserData(initialUserData);
+        setUserData(null);
         setIsLoading(false);
       }
     });
     return () => unsubscribe();
   }, [loadUserData]);
-
-  useEffect(() => {
-    if (!user || !userData) return;
-
-    const saveInterval = setInterval(() => {
-      if (userData.earnings > 0) {
-        updateFirebaseUserData(user.uid, { earnings: userData.earnings });
-      }
-    }, 30000); // Save earnings every 30 seconds
-
-    return () => clearInterval(saveInterval);
-  }, [user, userData]);
 
   const value = { user, userData, isLoading, updateUserData };
 

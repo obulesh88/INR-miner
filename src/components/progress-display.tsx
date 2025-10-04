@@ -7,7 +7,6 @@ import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Video, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import { useUserData } from '@/contexts/user-data-context';
 
@@ -17,11 +16,11 @@ const MAX_ADS_WATCHED = 44;
 export default function ProgressDisplay() {
   const { toast } = useToast();
   const router = useRouter();
-  const { userData, updateUserData: onUserDataChange, user } = useUserData();
+  const { userData, updateUserData, user } = useUserData();
 
   const [isAdLoading, setIsAdLoading] = useState(false);
 
-  const handleWatchAd = () => {
+  const handleWatchAd = async () => {
     if (!user) {
       router.push('/login');
       return;
@@ -43,25 +42,33 @@ export default function ProgressDisplay() {
     const newAdsWatched = userData.adsWatched + 1;
     const newEarnings = (userData.earnings || 0) + AD_EARNING_INCREASE;
 
-    onUserDataChange({
-      earnings: newEarnings,
-      adsWatched: newAdsWatched,
-    });
+    try {
+      await updateUserData({
+        earnings: newEarnings,
+        adsWatched: newAdsWatched,
+      });
 
-    toast({
-      title: 'Ad Watched!',
-      description: `You've earned ₹${AD_EARNING_INCREASE.toFixed(
-        3
-      )}. Watched ${newAdsWatched}/${MAX_ADS_WATCHED} ads today.`,
-    });
+      toast({
+        title: 'Ad Watched!',
+        description: `You've earned ₹${AD_EARNING_INCREASE.toFixed(
+          3
+        )}. Watched ${newAdsWatched}/${MAX_ADS_WATCHED} ads today.`,
+      });
 
-    setTimeout(() => {
-      window.open(
-        'https://enviousgarbage.com/b/3-Vk0.Ph3HpHv/bfmUVNJ_ZtDF0P2tN/jZISzUMtTPg_3tLmTzYv2XMWjBM/xROPD/gn',
-        '_blank'
-      );
-      setIsAdLoading(false);
-    }, 5000);
+      // Show loading for a bit, then open ad
+      setTimeout(() => {
+        router.push('/ad');
+        setIsAdLoading(false);
+      }, 1000);
+      
+    } catch (error) {
+       toast({
+        variant: 'destructive',
+        title: 'Error updating data',
+        description: `Could not save your progress. Please try again.`,
+      });
+       setIsAdLoading(false);
+    }
   };
 
   const adsWatched = userData?.adsWatched ?? 0;
@@ -99,7 +106,7 @@ export default function ProgressDisplay() {
               <Video className="mr-2 h-4 w-4" />
             )}
             {isAdLoading
-              ? 'Loading Ad...'
+              ? 'Processing...'
               : adsWatched >= MAX_ADS_WATCHED
               ? 'Ad Limit Reached'
               : 'Watch Ad to Earn'}
