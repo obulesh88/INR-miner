@@ -42,9 +42,9 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
 
   const getToday = () => new Date().toISOString().split('T')[0];
 
-  const loadUserData = useCallback(async (currentUser: User) => {
+  const loadUserData = useCallback(async () => {
     setIsLoading(true);
-    let firebaseData = await getUserData(currentUser.uid);
+    let firebaseData = await getUserData();
     let dataToSet: UserData;
 
     const today = getToday();
@@ -54,7 +54,7 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
       if (firebaseData.lastAdResetDate !== today) {
         firebaseData.adsWatched = 0;
         firebaseData.lastAdResetDate = today;
-        await updateFirebaseUserData(currentUser.uid, { adsWatched: 0, lastAdResetDate: today });
+        await updateFirebaseUserData({ adsWatched: 0, lastAdResetDate: today });
       }
       dataToSet = firebaseData;
     } else {
@@ -63,7 +63,7 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
         ...initialUserData,
         lastAdResetDate: today,
       };
-      await createUserData(currentUser.uid, newUserData);
+      await createUserData(newUserData);
       dataToSet = newUserData;
     }
 
@@ -79,11 +79,9 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
       setUserData(updatedData);
 
       try {
-        await updateFirebaseUserData(user.uid, newUserData);
+        await updateFirebaseUserData(newUserData);
       } catch (error) {
         console.error("Failed to update user data in Firebase:", error);
-        // Optionally, revert state or show an error to the user
-        // For now, we'll just log it. The state is already updated optimistically.
       }
     },
     [user, userData]
@@ -93,7 +91,7 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
-        loadUserData(currentUser);
+        loadUserData();
       } else {
         setUserData(null);
         setIsLoading(false);
