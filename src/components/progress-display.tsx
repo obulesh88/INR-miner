@@ -12,6 +12,8 @@ import { useUserData } from '@/contexts/user-data-context';
 
 const AD_EARNING_INCREASE = 0.003;
 const MAX_ADS_WATCHED = 44;
+const AD_URL = 'https://enviousgarbage.com/b/3-Vk0.Ph3HpHv/bfmUVNJ_ZtDF0P2tN/jZISzUMtTPg_3tLmTzYv2XMWjBM/xROPD/gn';
+
 
 export default function ProgressDisplay() {
   const { toast } = useToast();
@@ -57,7 +59,7 @@ export default function ProgressDisplay() {
 
       // Show loading for a bit, then open ad
       setTimeout(() => {
-        router.push('/ad');
+        window.open(AD_URL, '_blank');
         setIsAdLoading(false);
       }, 1000);
       
