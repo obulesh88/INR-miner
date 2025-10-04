@@ -76,6 +76,7 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
 
     if (localAdsData.date === today && localAdsData.count > dataToSet.adsWatched) {
       dataToSet.adsWatched = localAdsData.count;
+       await updateFirebaseUserData(currentUser.uid, { adsWatched: localAdsData.count });
     } else {
       localStorage.setItem(
         `adsWatched_${currentUser.uid}`,
@@ -89,18 +90,23 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
   const updateUserData = useCallback(
     (newUserData: Partial<UserData>) => {
       if (!user) return;
-
+  
+      const today = getToday();
+  
       setUserData((prev) => {
         const updatedData = { ...(prev || initialUserData), ...newUserData };
-        updateFirebaseUserData(user.uid, updatedData);
-
+        
+        // Immediately update Firebase with the new data
+        updateFirebaseUserData(user.uid, newUserData);
+  
+        // Also update local storage for adsWatched
         if (newUserData.adsWatched !== undefined) {
           localStorage.setItem(
             `adsWatched_${user.uid}`,
-            JSON.stringify({ count: newUserData.adsWatched, date: getToday() })
+            JSON.stringify({ count: newUserData.adsWatched, date: today })
           );
         }
-
+  
         return updatedData;
       });
     },
