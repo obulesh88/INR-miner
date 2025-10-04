@@ -1,6 +1,6 @@
 
-import { initializeApp, getApps, getApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
+import { getAuth, Auth } from "firebase/auth";
 import { getFirestore, enableIndexedDbPersistence, initializeFirestore, Firestore } from "firebase/firestore";
 
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -14,41 +14,29 @@ const firebaseConfig = {
   measurementId: "G-4E5TPKMM8P"
 };
 
-// Initialize Firebase
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const auth = getAuth(app);
-
-// Initialize Firestore with offline persistence
+let app: FirebaseApp;
+let auth: Auth;
 let db: Firestore;
-let persistenceEnabled = false;
 
 if (typeof window !== 'undefined') {
-  try {
+    app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+    auth = getAuth(app);
     db = getFirestore(app);
-    if (!persistenceEnabled) {
-      enableIndexedDbPersistence(db)
-        .then(() => {
-          persistenceEnabled = true;
-          console.log("Firestore persistence enabled");
-        })
-        .catch((error: any) => {
-          if (error.code === 'failed-precondition') {
-            console.warn('Firestore persistence failed: Multiple tabs open. Persistence will be enabled in one tab only.');
-          } else if (error.code === 'unimplemented') {
-            console.warn('Firestore persistence is not available in this browser.');
-          }
+
+    enableIndexedDbPersistence(db)
+        .then(() => console.log("Firestore persistence enabled"))
+        .catch((err) => {
+            if (err.code == 'failed-precondition') {
+                console.warn('Firestore persistence failed: Multiple tabs open. Persistence will be enabled in one tab only.');
+            } else if (err.code == 'unimplemented') {
+                console.warn('Firestore persistence is not available in this browser.');
+            }
         });
-    }
-  } catch (e) {
-    console.error("Error initializing Firestore on the client:", e);
-    // fallback to a non-persistent firestore instance
-    db = getFirestore(app);
-  }
 } else {
-  // Server-side initialization
-  db = initializeFirestore(app, {
-    // For server-side rendering, you might not need persistence
-  });
+    // Server-side initialization
+    app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+    auth = getAuth(app);
+    db = initializeFirestore(app, {});
 }
 
 

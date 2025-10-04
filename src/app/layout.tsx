@@ -5,6 +5,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 import { useEffect } from 'react';
 import { UserDataProvider } from '@/contexts/user-data-context';
+import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 
 export default function RootLayout({
   children,
@@ -37,6 +38,7 @@ export default function RootLayout({
       <body className="font-body antialiased pb-20 md:pb-0">
         <UserDataProvider>
           {children}
+          <FirebaseErrorListener />
         </UserDataProvider>
         <Toaster />
       </body>
