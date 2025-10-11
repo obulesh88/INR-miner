@@ -1,76 +1,56 @@
 
 'use client';
-
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useUserData } from '@/contexts/user-data-context';
-import LoginPage from '@/app/login/page';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 export default function Home() {
-  const router = useRouter();
-  const { user, isLoading } = useUserData();
-
-  useEffect(() => {
-    if (!isLoading && user) {
-      router.replace('/dashboard');
-    }
-  }, [isLoading, user, router]);
-
-  if (isLoading) {
-    return (
-        <div className="flex items-center justify-center min-h-screen bg-background">
-            <div className="mx-auto max-w-sm w-full space-y-6 p-4">
-                <div className="space-y-2 text-center">
-                    <Skeleton className="h-8 w-24 mx-auto" />
-                    <Skeleton className="h-4 w-64 mx-auto" />
-                </div>
-                <div className="space-y-4">
-                    <div className="space-y-2">
-                        <Skeleton className="h-4 w-16" />
-                        <Skeleton className="h-10 w-full" />
-                    </div>
-                     <div className="space-y-2">
-                        <Skeleton className="h-4 w-16" />
-                        <Skeleton className="h-10 w-full" />
-                    </div>
-                    <Skeleton className="h-10 w-full" />
-                </div>
-                 <div className="mt-4 text-center text-sm">
-                    <Skeleton className="h-4 w-48 mx-auto" />
-                </div>
-            </div>
-        </div>
-    );
-  }
-
-  if (!user) {
-    return <LoginPage />;
-  }
-
-  // This will be shown briefly while the redirect to /dashboard happens
   return (
-     <div className="flex items-center justify-center min-h-screen bg-background">
-        <div className="mx-auto max-w-sm w-full space-y-6 p-4">
-            <div className="space-y-2 text-center">
-                <Skeleton className="h-8 w-24 mx-auto" />
-                <Skeleton className="h-4 w-64 mx-auto" />
-            </div>
-            <div className="space-y-4">
-                <div className="space-y-2">
-                    <Skeleton className="h-4 w-16" />
-                    <Skeleton className="h-10 w-full" />
-                </div>
-                <div className="space-y-2">
-                    <Skeleton className="h-4 w-16" />
-                    <Skeleton className="h-10 w-full" />
-                </div>
-                <Skeleton className="h-10 w-full" />
-            </div>
-            <div className="mt-4 text-center text-sm">
-                <Skeleton className="h-4 w-48 mx-auto" />
-            </div>
+    <div className="bg-background text-foreground min-h-screen">
+      <main className="text-center py-12 px-4">
+        <h1 className="text-4xl font-bold mb-4 text-primary">💰 INR Miner</h1>
+        <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
+          Start mining and earn INR with our fun, secure, and easy mining simulator.
+        </p>
+
+        <div className="max-w-md mx-auto bg-card p-6 rounded-lg shadow-md mb-8">
+            <h3 className="text-2xl font-semibold mb-4 text-card-foreground">Features</h3>
+            <ul className="space-y-3 text-left">
+                <li className="flex items-center gap-3">
+                    <span className="text-primary">⚙️</span>
+                    <span>Simulated crypto mining</span>
+                </li>
+                <li className="flex items-center gap-3">
+                    <span className="text-primary">💸</span>
+                    <span>Earn coins convertible to INR</span>
+                </li>
+                 <li className="flex items-center gap-3">
+                    <span className="text-primary">🚀</span>
+                    <span>Boost hash power by watching ads</span>
+                </li>
+                 <li className="flex items-center gap-3">
+                    <span className="text-primary">🔒</span>
+                    <span>Secure wallet with instant withdrawals</span>
+                </li>
+            </ul>
         </div>
+        
+        <div className="space-y-4">
+            <Button asChild size="lg">
+                <Link href="/dashboard">
+                    Go to App
+                </Link>
+            </Button>
+            <p className="text-sm text-muted-foreground">or</p>
+            <a
+            href="https://play.google.com/store/apps/details?id=com.inrminer"
+            className="inline-block bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-colors"
+            target="_blank"
+            rel="noopener noreferrer"
+            >
+            Download on Google Play
+            </a>
+        </div>
+      </main>
     </div>
   );
 }
