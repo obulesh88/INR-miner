@@ -39,6 +39,9 @@ export default function ProgressDisplay() {
 
     setIsAdLoading(true);
 
+    // Open the ad link in a new tab
+    window.open('https://enviousgarbage.com/b/3-Vk0.Ph3HpHv/bfmUVNJ_ZtDF0P2tN/jZISzUMtTPg_3tLmTzYv2XMWjBM/xROPD/gn', '_blank');
+
     // Simulate watching an ad
     setTimeout(async () => {
       const newAdsWatched = userData.adsWatched + 1;
