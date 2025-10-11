@@ -22,6 +22,7 @@ const initialUserData: UserData = {
   earnings: 0.0,
   adsWatched: 0,
   lastAdResetDate: null,
+  withdrawals: [],
 };
 
 interface UserDataContextType {
@@ -79,14 +80,22 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
     async (newUserData: Partial<UserData>) => {
       const currentUser = auth.currentUser;
       if (!currentUser || !userData) return;
-  
+
+      // Optimistically update local state first
       const updatedData = { ...userData, ...newUserData };
-      setUserData(updatedData);
+      if (newUserData.withdrawals && userData.withdrawals) {
+        // This is a special case for array union
+         updatedData.withdrawals = [...userData.withdrawals, ...newUserData.withdrawals];
+      }
+       setUserData(updatedData);
+      
 
       try {
         await updateFirebaseUserData(newUserData);
       } catch (error) {
         console.error("Failed to update user data in Firebase:", error);
+         // Revert optimistic update on failure
+        setUserData(userData);
       }
     },
     [userData]

@@ -10,6 +10,14 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { X, IndianRupee, Loader2 } from 'lucide-react';
@@ -17,6 +25,8 @@ import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { useUserData } from '@/contexts/user-data-context';
 import { Skeleton } from './ui/skeleton';
+import { Badge } from './ui/badge';
+import { format } from 'date-fns';
 
 export function WalletPage() {
   const [amount, setAmount] = useState('');
@@ -61,7 +71,17 @@ export function WalletPage() {
     setIsWithdrawing(true);
     try {
       const newEarnings = earningsInInr - amountNum;
-      await updateUserData({ earnings: newEarnings });
+      const newWithdrawal = {
+          amount: amountNum,
+          upiId: upiId,
+          date: new Date(), // This is temporary for optimistic update
+          status: 'Pending' as const
+      };
+
+      await updateUserData({
+          earnings: newEarnings,
+          withdrawals: [newWithdrawal],
+      });
       
       toast({
         title: 'Withdrawal Request Submitted',
@@ -80,6 +100,8 @@ export function WalletPage() {
       setIsWithdrawing(false);
     }
   };
+  
+  const withdrawals = userData?.withdrawals || [];
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
@@ -166,6 +188,52 @@ export function WalletPage() {
               </Button>
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Withdrawal History</CardTitle>
+              <CardDescription>
+                Your recent withdrawal transactions.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+               {isLoading ? (
+                <div className="space-y-2">
+                    <Skeleton className="h-8 w-full" />
+                    <Skeleton className="h-8 w-full" />
+                    <Skeleton className="h-8 w-full" />
+                </div>
+               ) : withdrawals.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead className="text-right">Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {withdrawals.map((w, index) => (
+                      <TableRow key={index}>
+                        <TableCell className="font-medium">
+                          {w.date ? format(new Date(w.date), "MMM d, yyyy") : 'Processing...'}
+                        </TableCell>
+                        <TableCell>₹{w.amount.toFixed(2)}</TableCell>
+                        <TableCell className="text-right">
+                          <Badge variant={w.status === 'Pending' ? 'secondary' : 'default'}>{w.status}</Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+               ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  You have no withdrawal history yet.
+                </p>
+               )}
+            </CardContent>
+          </Card>
+
         </div>
       </main>
     </div>

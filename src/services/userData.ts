@@ -1,14 +1,22 @@
 
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp, arrayUnion } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { type User } from 'firebase/auth';
 
+export interface Withdrawal {
+    amount: number;
+    upiId: string;
+    date: any; // Can be Date or FieldValue
+    status: 'Pending' | 'Completed' | 'Failed';
+}
+
 export interface UserData {
   earnings: number;
   adsWatched: number;
   lastAdResetDate: string | null;
+  withdrawals: Withdrawal[];
 }
 
 const getCurrentUser = (): User => {
@@ -26,7 +34,15 @@ export const getUserData = async (): Promise<UserData | null> => {
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
-      return docSnap.data() as UserData;
+      const data = docSnap.data() as UserData;
+      // Convert Firestore Timestamps to JS Date objects
+      if (data.withdrawals) {
+        data.withdrawals = data.withdrawals.map(w => ({
+            ...w,
+            date: w.date.toDate ? w.date.toDate() : new Date(w.date)
+        })).sort((a, b) => b.date.getTime() - a.date.getTime());
+      }
+      return data;
     } else {
       console.log('No such document!');
       return null;
@@ -66,13 +82,24 @@ export const createUserData = async (data: UserData): Promise<void> => {
 export const updateUserData = async (data: Partial<UserData>): Promise<void> => {
     const user = getCurrentUser();
     const docRef = doc(db, 'users', user.uid);
-    updateDoc(docRef, data)
+
+    let dataToUpdate: any = { ...data };
+
+    if (data.withdrawals && data.withdrawals.length > 0) {
+        const newWithdrawal = {
+            ...data.withdrawals[0],
+            date: serverTimestamp()
+        };
+        dataToUpdate.withdrawals = arrayUnion(newWithdrawal);
+    }
+
+    updateDoc(docRef, dataToUpdate)
         .catch((serverError) => {
              if (serverError.code === 'permission-denied') {
                 const permissionError = new FirestorePermissionError({
                     path: docRef.path,
                     operation: 'update',
-                    requestResourceData: data,
+                    requestResourceData: dataToUpdate,
                 });
                 errorEmitter.emit('permission-error', permissionError);
             } else {
