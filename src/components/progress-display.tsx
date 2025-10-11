@@ -11,7 +11,7 @@ import { useRouter } from 'next/navigation';
 import { useUserData } from '@/contexts/user-data-context';
 
 const AD_EARNING_INCREASE = 0.2;
-const MAX_ADS_WATCHED = 4;
+const MAX_ADS_WATCHED = 20;
 
 export default function ProgressDisplay() {
   const { toast } = useToast();
@@ -39,35 +39,33 @@ export default function ProgressDisplay() {
 
     setIsAdLoading(true);
 
-    const newAdsWatched = userData.adsWatched + 1;
-    const newEarnings = (userData.earnings || 0) + AD_EARNING_INCREASE;
+    // Simulate watching an ad
+    setTimeout(async () => {
+      const newAdsWatched = userData.adsWatched + 1;
+      const newEarnings = (userData.earnings || 0) + AD_EARNING_INCREASE;
 
-    try {
-      await updateUserData({
-        earnings: newEarnings,
-        adsWatched: newAdsWatched,
-      });
+      try {
+        await updateUserData({
+          earnings: newEarnings,
+          adsWatched: newAdsWatched,
+        });
 
-      toast({
-        title: 'Ad Watched!',
-        description: `You've earned ₹${AD_EARNING_INCREASE.toFixed(
-          3
-        )}. Watched ${newAdsWatched}/${MAX_ADS_WATCHED} ads today.`,
-      });
-
-      // Show loading for a bit
-      setTimeout(() => {
+        toast({
+          title: 'Ad Watched!',
+          description: `You've earned ₹${AD_EARNING_INCREASE.toFixed(
+            2
+          )}. Watched ${newAdsWatched}/${MAX_ADS_WATCHED} ads today.`,
+        });
+      } catch (error) {
+        toast({
+          variant: 'destructive',
+          title: 'Error updating data',
+          description: `Could not save your progress. Please try again.`,
+        });
+      } finally {
         setIsAdLoading(false);
-      }, 1000);
-      
-    } catch (error) {
-       toast({
-        variant: 'destructive',
-        title: 'Error updating data',
-        description: `Could not save your progress. Please try again.`,
-      });
-       setIsAdLoading(false);
-    }
+      }
+    }, 1000); // Simulate ad loading time
   };
 
   const adsWatched = userData?.adsWatched ?? 0;
