@@ -7,7 +7,6 @@ export default function Home() {
   return (
     <div className="bg-background text-foreground min-h-screen">
       <main className="text-center py-12 px-4">
-        <h1 className="text-4xl font-bold mb-4 text-primary">Crypto Mining App</h1>
         <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
           Start mining and earn with our fun, secure, and easy mining simulator.
         </p>

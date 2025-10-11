@@ -27,7 +27,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <head>
-        <title>Crypto Mining App</title>
+        <title>Mining App</title>
         <meta
           name="description"
           content="Start mining and earn with our fun, secure, and easy mining simulator."
