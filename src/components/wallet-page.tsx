@@ -71,16 +71,16 @@ export function WalletPage() {
     setIsWithdrawing(true);
     try {
       const newEarnings = earningsInInr - amountNum;
-      const newWithdrawal = {
+      const newWithdrawalRequest = {
           amount: amountNum,
           upiId: upiId,
-          date: null, // Temporary for optimistic update, server will set this
+          date: 'server-timestamp', // This is a placeholder for the backend
           status: 'Pending' as const
       };
 
       await updateUserData({
           earnings: newEarnings,
-          withdrawals: [newWithdrawal],
+          withdrawals: [newWithdrawalRequest],
       });
       
       toast({
@@ -197,7 +197,7 @@ export function WalletPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-               {isLoading ? (
+               {isLoading && withdrawals.length === 0 ? (
                 <div className="space-y-2">
                     <Skeleton className="h-8 w-full" />
                     <Skeleton className="h-8 w-full" />
@@ -216,7 +216,7 @@ export function WalletPage() {
                     {withdrawals.map((w, index) => (
                       <TableRow key={index}>
                         <TableCell className="font-medium">
-                          {w.date ? format(new Date(w.date), "MMM d, yyyy") : 'Processing...'}
+                          {w.date instanceof Date ? format(w.date, "MMM d, yyyy") : 'Processing...'}
                         </TableCell>
                         <TableCell>₹{w.amount.toFixed(2)}</TableCell>
                         <TableCell className="text-right">

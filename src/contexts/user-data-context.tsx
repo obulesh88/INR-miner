@@ -81,29 +81,32 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
     async (newUserData: Partial<UserData>) => {
       const currentUser = auth.currentUser;
       if (!currentUser || !userData) return;
-
+  
       const previousUserData = { ...userData };
-
+  
       // Optimistically update local state first
-      const updatedData: UserData = { ...userData, ...newUserData };
-      if (newUserData.withdrawals && userData.withdrawals) {
-         updatedData.withdrawals = [...userData.withdrawals, ...newUserData.withdrawals].sort((a,b) => (b.date?.getTime() || 0) - (a.date?.getTime() || 0));
+      const updatedData = { ...userData, ...newUserData };
+      if (newUserData.withdrawals && newUserData.withdrawals.length > 0 && userData.withdrawals) {
+        const newWithdrawal = {
+          ...newUserData.withdrawals[0],
+          date: new Date(), // Use client date for optimistic update
+        };
+        updatedData.withdrawals = [newWithdrawal, ...userData.withdrawals];
       }
-       setUserData(updatedData);
-      
-
+      setUserData(updatedData);
+  
       try {
         await updateFirebaseUserData(newUserData);
-        // After successful Firebase update, we might want to reload the data
-        // to get server-timestamps and other computed values.
+        // After successful Firebase update, reload the data
+        // to get server-timestamps and ensure consistency.
         if(user) {
-          loadUserData(user);
+          await loadUserData(user);
         }
-
       } catch (error) {
         console.error("Failed to update user data in Firebase:", error);
-         // Revert optimistic update on failure
+        // Revert optimistic update on failure
         setUserData(previousUserData);
+        throw error; // Re-throw the error to be caught by the calling component
       }
     },
     [userData, user, loadUserData]

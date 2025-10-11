@@ -1,5 +1,5 @@
 
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp, arrayUnion } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp, arrayUnion, FieldValue } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -8,7 +8,7 @@ import { type User } from 'firebase/auth';
 export interface Withdrawal {
     amount: number;
     upiId: string;
-    date: any; // Can be Date, null, or FieldValue
+    date: any; // Can be Date, null, FieldValue, or a placeholder string
     status: 'Pending' | 'Completed' | 'Failed';
 }
 
@@ -39,8 +39,8 @@ export const getUserData = async (): Promise<UserData | null> => {
       if (data.withdrawals) {
         data.withdrawals = data.withdrawals.map(w => ({
             ...w,
-            date: w.date?.toDate ? w.date.toDate() : null // handle both Timestamp and null
-        })).sort((a, b) => (b.date?.getTime() || 0) - (a.date?.getTime() || 0));
+            date: w.date?.toDate ? w.date.toDate() : w.date // handle Timestamps and other types
+        })).sort((a, b) => (b.date?.getTime ? b.date.getTime() : 0) - (a.date?.getTime ? a.date.getTime() : 0));
       }
       return data;
     } else {
@@ -83,18 +83,18 @@ export const updateUserData = async (data: Partial<UserData>): Promise<void> => 
     const user = getCurrentUser();
     const docRef = doc(db, 'users', user.uid);
 
-    let dataToUpdate: any = { ...data };
+    const dataToUpdate: { [key: string]: any } = { ...data };
 
-    // Handle withdrawal separately to manage serverTimestamp
     if (data.withdrawals && data.withdrawals.length > 0) {
-        const newWithdrawal = { ...data.withdrawals[0] };
-        // Replace client-side temporary date with server timestamp
-        newWithdrawal.date = serverTimestamp();
-        dataToUpdate.withdrawals = arrayUnion(newWithdrawal);
+        const newWithdrawalRequest = data.withdrawals[0];
+        const withdrawalWithTimestamp = {
+            ...newWithdrawalRequest,
+            date: serverTimestamp() 
+        };
+        dataToUpdate.withdrawals = arrayUnion(withdrawalWithTimestamp);
     }
-    
 
-    updateDoc(docRef, dataToUpdate)
+    return updateDoc(docRef, dataToUpdate)
         .catch((serverError) => {
              if (serverError.code === 'permission-denied') {
                 const permissionError = new FirestorePermissionError({
@@ -103,8 +103,10 @@ export const updateUserData = async (data: Partial<UserData>): Promise<void> => 
                     requestResourceData: dataToUpdate,
                 });
                 errorEmitter.emit('permission-error', permissionError);
-            } else {
-                console.error('Error updating user data:', serverError);
-            }
+             } else {
+                 console.error('Error updating user data:', serverError);
+             }
+             // Re-throw the error so the calling component can handle it
+             throw serverError;
         });
 };
