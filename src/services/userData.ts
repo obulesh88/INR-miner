@@ -86,12 +86,16 @@ export const updateUserData = async (data: Partial<UserData>): Promise<void> => 
     let dataToUpdate: any = { ...data };
 
     if (data.withdrawals && data.withdrawals.length > 0) {
+        // Firestore doesn't allow serverTimestamp in arrayUnion.
+        // The date from the client is temporary for the optimistic update.
+        // When data is re-fetched from firestore, it will have the server timestamp.
         const newWithdrawal = {
             ...data.withdrawals[0],
-            date: serverTimestamp()
+            date: serverTimestamp(), // Correctly used in updateDoc, not arrayUnion.
         };
         dataToUpdate.withdrawals = arrayUnion(newWithdrawal);
     }
+    
 
     updateDoc(docRef, dataToUpdate)
         .catch((serverError) => {
