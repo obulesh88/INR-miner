@@ -21,8 +21,9 @@ import { Skeleton } from './ui/skeleton';
 export function WalletPage() {
   const [amount, setAmount] = useState('');
   const [upiId, setUpiId] = useState('');
-  const { userData, isLoading } = useUserData();
+  const { userData, isLoading, updateUserData } = useUserData();
   const { toast } = useToast();
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
 
   const earningsInInr = userData?.earnings || 0.0;
   const minWithdrawalInr = 1;
@@ -37,7 +38,9 @@ export function WalletPage() {
     upiId.trim() !== '';
     
   let buttonText = 'Withdraw';
-  if (isNaN(amountNum) || amountNum <= 0) {
+  if (isWithdrawing) {
+    buttonText = 'Processing...';
+  } else if (isNaN(amountNum) || amountNum <= 0) {
       buttonText = 'Enter an amount';
   } else if (earningsInInr < minWithdrawalInr) {
       buttonText = `Minimum balance of ₹${minWithdrawalInr} required`;
@@ -52,11 +55,30 @@ export function WalletPage() {
   }
 
 
-  const handleWithdraw = () => {
-    toast({
-      title: 'Withdrawal Request Submitted',
-      description: `Your request to withdraw ₹${amount} has been received. Please allow 24-48 hours for processing.`,
-    });
+  const handleWithdraw = async () => {
+    if (!canWithdraw) return;
+
+    setIsWithdrawing(true);
+    try {
+      const newEarnings = earningsInInr - amountNum;
+      await updateUserData({ earnings: newEarnings });
+      
+      toast({
+        title: 'Withdrawal Request Submitted',
+        description: `Your request to withdraw ₹${amountNum.toFixed(2)} has been received.`,
+      });
+
+      setAmount('');
+      setUpiId('');
+    } catch (error) {
+       toast({
+        variant: 'destructive',
+        title: 'Withdrawal Failed',
+        description: 'Something went wrong. Please try again.',
+      });
+    } finally {
+      setIsWithdrawing(false);
+    }
   };
 
   return (
@@ -116,7 +138,7 @@ export function WalletPage() {
                       placeholder="yourname@okhdfcbank"
                       value={upiId}
                       onChange={(e) => setUpiId(e.target.value)}
-                      disabled={isLoading}
+                      disabled={isLoading || isWithdrawing}
                     />
                   </div>
                   <div className="space-y-2">
@@ -129,7 +151,7 @@ export function WalletPage() {
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
                         className="pl-7"
-                        disabled={isLoading}
+                        disabled={isLoading || isWithdrawing}
                       />
                       <IndianRupee className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     </div>
@@ -138,9 +160,9 @@ export function WalletPage() {
                     </p>
                   </div>
                 </div>
-              <Button onClick={handleWithdraw} disabled={!canWithdraw || isLoading} className="w-full mt-4">
-                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                {isLoading ? 'Loading...' : buttonText}
+              <Button onClick={handleWithdraw} disabled={!canWithdraw || isLoading || isWithdrawing} className="w-full mt-4">
+                {isWithdrawing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                {buttonText}
               </Button>
             </CardContent>
           </Card>
