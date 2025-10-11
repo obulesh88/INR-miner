@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/table"
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { X, IndianRupee, Loader2 } from 'lucide-react';
+import { X, IndianRupee, Loader2, Calendar } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { useUserData } from '@/contexts/user-data-context';
@@ -74,7 +74,6 @@ export function WalletPage() {
       const newWithdrawalRequest = {
           amount: amountNum,
           upiId: upiId,
-          date: 'server-timestamp', // This is a placeholder for the backend
           status: 'Pending' as const
       };
 
@@ -207,18 +206,16 @@ export function WalletPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Date</TableHead>
                       <TableHead>Amount</TableHead>
+                      <TableHead>UPI ID</TableHead>
                       <TableHead className="text-right">Status</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {withdrawals.map((w, index) => (
                       <TableRow key={index}>
-                        <TableCell className="font-medium">
-                          {w.date instanceof Date ? format(w.date, "MMM d, yyyy") : 'Processing...'}
-                        </TableCell>
                         <TableCell>₹{w.amount.toFixed(2)}</TableCell>
+                        <TableCell className="font-medium">{w.upiId}</TableCell>
                         <TableCell className="text-right">
                           <Badge variant={w.status === 'Pending' ? 'secondary' : 'default'}>{w.status}</Badge>
                         </TableCell>

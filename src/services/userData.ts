@@ -1,5 +1,5 @@
 
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp, arrayUnion, FieldValue } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -8,7 +8,6 @@ import { type User } from 'firebase/auth';
 export interface Withdrawal {
     amount: number;
     upiId: string;
-    date: any; // Can be Date, null, FieldValue, or a placeholder string
     status: 'Pending' | 'Completed' | 'Failed';
 }
 
@@ -35,12 +34,9 @@ export const getUserData = async (): Promise<UserData | null> => {
 
     if (docSnap.exists()) {
       const data = docSnap.data() as UserData;
-      // Convert Firestore Timestamps to JS Date objects
       if (data.withdrawals) {
-        data.withdrawals = data.withdrawals.map(w => ({
-            ...w,
-            date: w.date?.toDate ? w.date.toDate() : w.date // handle Timestamps and other types
-        })).sort((a, b) => (b.date?.getTime ? b.date.getTime() : 0) - (a.date?.getTime ? a.date.getTime() : 0));
+        // Since there's no date, we can just show them in the order they are in the array (which is newest first with arrayUnion)
+         data.withdrawals = data.withdrawals.reverse(); // To show latest first
       }
       return data;
     } else {
@@ -87,13 +83,8 @@ export const updateUserData = async (data: Partial<UserData>): Promise<void> => 
 
     if (data.withdrawals && data.withdrawals.length > 0) {
         const newWithdrawalRequest = data.withdrawals[0];
-        const withdrawalWithTimestamp = {
-            ...newWithdrawalRequest,
-            date: serverTimestamp() 
-        };
         // Use arrayUnion to add the new withdrawal object.
-        // This is an atomic operation.
-        dataToUpdate.withdrawals = arrayUnion(withdrawalWithTimestamp);
+        dataToUpdate.withdrawals = arrayUnion(newWithdrawalRequest);
     }
 
     return updateDoc(docRef, dataToUpdate)

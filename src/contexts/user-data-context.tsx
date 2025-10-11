@@ -16,7 +16,6 @@ import {
   createUserData,
   updateUserData as updateFirebaseUserData,
   type UserData,
-  type Withdrawal,
 } from '@/services/userData';
 
 const initialUserData: UserData = {
@@ -84,22 +83,15 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
       const previousUserData = { ...userData };
 
       // Optimistically update local state first
-      const updatedData = { ...userData, ...newUserData };
-      
-      // For withdrawals, we add a placeholder for the UI and let the backend handle the real object
-      if (newUserData.withdrawals && newUserData.withdrawals.length > 0 && userData.withdrawals) {
-        const optimisticWithdrawal = {
-          ...newUserData.withdrawals[0],
-          date: new Date(), // Use client date for optimistic update
-        };
-        updatedData.withdrawals = [optimisticWithdrawal, ...userData.withdrawals];
+      let updatedData = { ...userData, ...newUserData };
+      if (newUserData.withdrawals && userData.withdrawals) {
+        updatedData.withdrawals = [...newUserData.withdrawals, ...userData.withdrawals];
       }
-
       setUserData(updatedData);
 
       try {
         await updateFirebaseUserData(newUserData);
-        // After successful Firebase update, reload the data to get server-timestamps and ensure consistency.
+        // After successful Firebase update, reload the data to ensure consistency.
         await loadUserData(user);
       } catch (error) {
         console.error("Failed to update user data in Firebase:", error);
