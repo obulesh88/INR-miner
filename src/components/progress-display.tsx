@@ -10,8 +10,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { useUserData } from '@/contexts/user-data-context';
 
-const AD_EARNING_INCREASE = 0.2;
-const MAX_ADS_WATCHED = 20;
+const AD_EARNING_INCREASE = 0.004;
+const MAX_ADS_WATCHED = 44;
 
 export default function ProgressDisplay() {
   const { toast } = useToast();
@@ -53,7 +53,7 @@ export default function ProgressDisplay() {
         toast({
           title: 'Ad Watched!',
           description: `You've earned ₹${AD_EARNING_INCREASE.toFixed(
-            2
+            3
           )}. Watched ${newAdsWatched}/${MAX_ADS_WATCHED} ads today.`,
         });
       } catch (error) {
