@@ -40,15 +40,6 @@ export default function Home() {
                     Go to App
                 </Link>
             </Button>
-            <p className="text-sm text-muted-foreground">or</p>
-            <a
-            href="https://play.google.com/store/apps/details?id=com.inrminer"
-            className="inline-block bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-colors"
-            target="_blank"
-            rel="noopener noreferrer"
-            >
-            Download on Google Play
-            </a>
         </div>
       </main>
     </div>
