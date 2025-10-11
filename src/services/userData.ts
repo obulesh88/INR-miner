@@ -91,6 +91,8 @@ export const updateUserData = async (data: Partial<UserData>): Promise<void> => 
             ...newWithdrawalRequest,
             date: serverTimestamp() 
         };
+        // Use arrayUnion to add the new withdrawal object.
+        // This is an atomic operation.
         dataToUpdate.withdrawals = arrayUnion(withdrawalWithTimestamp);
     }
 
