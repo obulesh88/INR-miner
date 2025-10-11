@@ -74,7 +74,7 @@ export function WalletPage() {
       const newWithdrawal = {
           amount: amountNum,
           upiId: upiId,
-          date: new Date(), // This is temporary for optimistic update
+          date: null, // Temporary for optimistic update, server will set this
           status: 'Pending' as const
       };
 

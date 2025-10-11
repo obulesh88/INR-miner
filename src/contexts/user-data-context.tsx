@@ -16,6 +16,7 @@ import {
   createUserData,
   updateUserData as updateFirebaseUserData,
   type UserData,
+  type Withdrawal,
 } from '@/services/userData';
 
 const initialUserData: UserData = {
@@ -81,24 +82,31 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
       const currentUser = auth.currentUser;
       if (!currentUser || !userData) return;
 
+      const previousUserData = { ...userData };
+
       // Optimistically update local state first
-      const updatedData = { ...userData, ...newUserData };
+      const updatedData: UserData = { ...userData, ...newUserData };
       if (newUserData.withdrawals && userData.withdrawals) {
-        // This is a special case for array union
-         updatedData.withdrawals = [...userData.withdrawals, ...newUserData.withdrawals];
+         updatedData.withdrawals = [...userData.withdrawals, ...newUserData.withdrawals].sort((a,b) => (b.date?.getTime() || 0) - (a.date?.getTime() || 0));
       }
        setUserData(updatedData);
       
 
       try {
         await updateFirebaseUserData(newUserData);
+        // After successful Firebase update, we might want to reload the data
+        // to get server-timestamps and other computed values.
+        if(user) {
+          loadUserData(user);
+        }
+
       } catch (error) {
         console.error("Failed to update user data in Firebase:", error);
          // Revert optimistic update on failure
-        setUserData(userData);
+        setUserData(previousUserData);
       }
     },
-    [userData]
+    [userData, user, loadUserData]
   );
   
   useEffect(() => {

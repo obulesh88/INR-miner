@@ -8,7 +8,7 @@ import { type User } from 'firebase/auth';
 export interface Withdrawal {
     amount: number;
     upiId: string;
-    date: any; // Can be Date or FieldValue
+    date: any; // Can be Date, null, or FieldValue
     status: 'Pending' | 'Completed' | 'Failed';
 }
 
@@ -39,8 +39,8 @@ export const getUserData = async (): Promise<UserData | null> => {
       if (data.withdrawals) {
         data.withdrawals = data.withdrawals.map(w => ({
             ...w,
-            date: w.date.toDate ? w.date.toDate() : new Date(w.date)
-        })).sort((a, b) => b.date.getTime() - a.date.getTime());
+            date: w.date?.toDate ? w.date.toDate() : null // handle both Timestamp and null
+        })).sort((a, b) => (b.date?.getTime() || 0) - (a.date?.getTime() || 0));
       }
       return data;
     } else {
@@ -85,14 +85,11 @@ export const updateUserData = async (data: Partial<UserData>): Promise<void> => 
 
     let dataToUpdate: any = { ...data };
 
+    // Handle withdrawal separately to manage serverTimestamp
     if (data.withdrawals && data.withdrawals.length > 0) {
-        // Firestore doesn't allow serverTimestamp in arrayUnion.
-        // The date from the client is temporary for the optimistic update.
-        // When data is re-fetched from firestore, it will have the server timestamp.
-        const newWithdrawal = {
-            ...data.withdrawals[0],
-            date: serverTimestamp(), // Correctly used in updateDoc, not arrayUnion.
-        };
+        const newWithdrawal = { ...data.withdrawals[0] };
+        // Replace client-side temporary date with server timestamp
+        newWithdrawal.date = serverTimestamp();
         dataToUpdate.withdrawals = arrayUnion(newWithdrawal);
     }
     
