@@ -27,14 +27,14 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <head>
-        <title>INR Miner – Earn Real INR by Mining Simulator</title>
+        <title>Crypto Mining App</title>
         <meta
           name="description"
-          content="INR Miner lets you earn INR by simulating crypto mining. Boost hash power, earn coins, and withdraw rewards securely!"
+          content="Start mining and earn with our fun, secure, and easy mining simulator."
         />
         <meta
           name="keywords"
-          content="INR Miner, mining app, crypto miner, earn money, bitcoin simulator, mining rewards"
+          content="mining app, crypto miner, earn money, bitcoin simulator, mining rewards"
         />
         <meta name="robots" content="index, follow" />
         <link rel="canonical" href="https://www.inrminer.com" />

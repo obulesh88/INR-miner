@@ -7,9 +7,9 @@ export default function Home() {
   return (
     <div className="bg-background text-foreground min-h-screen">
       <main className="text-center py-12 px-4">
-        <h1 className="text-4xl font-bold mb-4 text-primary">💰 INR Miner</h1>
+        <h1 className="text-4xl font-bold mb-4 text-primary">Crypto Mining App</h1>
         <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
-          Start mining and earn INR with our fun, secure, and easy mining simulator.
+          Start mining and earn with our fun, secure, and easy mining simulator.
         </p>
 
         <div className="max-w-md mx-auto bg-card p-6 rounded-lg shadow-md mb-8">
@@ -21,7 +21,7 @@ export default function Home() {
                 </li>
                 <li className="flex items-center gap-3">
                     <span className="text-primary">💸</span>
-                    <span>Earn coins convertible to INR</span>
+                    <span>Earn coins convertible to real rewards</span>
                 </li>
                  <li className="flex items-center gap-3">
                     <span className="text-primary">🚀</span>

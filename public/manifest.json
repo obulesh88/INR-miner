@@ -1,35 +1,21 @@
 {
-  "background_color": "#ffffff",
-  "display": "standalone",
-  "name": "INR Miner",
-  "orientation": "any",
-  "scope": "/",
-  "short_name": "INR Miner",
+  "name": "Crypto Mining App",
+  "short_name": "CryptoApp",
+  "description": "A fun, secure, and easy mining simulator.",
   "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0A0A0A",
   "theme_color": "#1976d2",
-  "description": "A fast, modern Progressive Web App built with Next.js and TailwindCSS. Works offline and can be installed like a native app.",
-  "lang": "en",
   "icons": [
     {
-      "src": "/icon-192x192.png",
+      "src": "icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/icon-512x512.png",
+      "src": "icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
-  ],
-  "shortcuts": [
-    {
-      "name": "Start Mining",
-      "url": "/dashboard",
-      "description": "Go to the dashboard and start mining"
-    }
-  ],
-  "categories": [
-    "finance",
-    "games"
   ]
 }
