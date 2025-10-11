@@ -10,8 +10,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { useUserData } from '@/contexts/user-data-context';
 
-const AD_EARNING_INCREASE = 0.003;
-const MAX_ADS_WATCHED = 44;
+const AD_EARNING_INCREASE = 0.2;
+const MAX_ADS_WATCHED = 4;
 
 export default function ProgressDisplay() {
   const { toast } = useToast();
