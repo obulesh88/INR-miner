@@ -15,11 +15,13 @@ import { Loader2 } from 'lucide-react';
 import { createUserData, type UserData } from '@/services/userData';
 
 export default function SignupPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,15 +38,15 @@ export default function SignupPage() {
       await createUserData(initialUserData);
 
       toast({
-        title: 'Signup Successful',
-        description: 'Your account has been created.',
+        title: 'Account Created',
+        description: 'You have successfully signed up.',
       });
       router.push('/dashboard');
     } catch (error: any) {
       toast({
         variant: 'destructive',
         title: 'Signup Failed',
-        description: error.message || 'Please try again.',
+        description: error.message,
       });
     } finally {
       setIsLoading(false);
@@ -53,50 +55,76 @@ export default function SignupPage() {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">
-      <Card className="w-full max-w-sm">
+      <Card className="mx-auto max-w-sm">
         <CardHeader>
-          <CardTitle>Create an Account</CardTitle>
-          <CardDescription>Enter your details to get started.</CardDescription>
+          <CardTitle className="text-xl">Sign Up</CardTitle>
+          <CardDescription>
+            Enter your information to create an account
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSignup} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="m@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                disabled={isLoading}
-              />
+          <form onSubmit={handleSignup}>
+            <div className="grid gap-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="first-name">First name</Label>
+                  <Input 
+                    id="first-name" 
+                    placeholder="Max" 
+                    required 
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    disabled={isLoading}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="last-name">Last name</Label>
+                  <Input 
+                    id="last-name" 
+                    placeholder="Robinson" 
+                    required 
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    disabled={isLoading}
+                  />
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="m@example.com"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={isLoading}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="password">Password</Label>
+                <Input 
+                  id="password" 
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={isLoading}
+                />
+              </div>
+              <Button type="submit" disabled={isLoading} className="w-full">
+                {isLoading ? <Loader2 className='animate-spin' /> : 'Create an account'}
+              </Button>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-                disabled={isLoading}
-              />
-            </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading && <Loader2 className="animate-spin" />}
-              {!isLoading && 'Sign Up'}
-            </Button>
           </form>
-           <p className="mt-4 text-center text-sm text-muted-foreground">
-            Already have an account?{' '}
-            <Link href="/login" className="font-medium text-primary hover:underline">
+          <div className="mt-4 text-center text-sm">
+            Already have an account?{" "}
+            <Link href="/login" className="underline">
               Login
             </Link>
-          </p>
+          </div>
         </CardContent>
       </Card>
     </div>
-  );
+  )
 }

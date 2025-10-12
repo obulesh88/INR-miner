@@ -118,9 +118,11 @@ export default function LoginPage() {
             {isGoogleLoading ? (
                 <Loader2 className="animate-spin" />
             ) : (
-                <GoogleIcon className="w-5 h-5" />
+                <>
+                    <GoogleIcon className="w-5 h-5" />
+                    Google
+                </>
             )}
-            Google
           </Button>
           <p className="mt-4 text-center text-sm text-muted-foreground">
             Don&apos;t have an account?{' '}
