@@ -1,32 +1,43 @@
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 export default function AdPage() {
+  const router = useRouter();
+  const [countdown, setCountdown] = useState(8);
+
+  useEffect(() => {
+    if (countdown > 0) {
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+      return () => clearTimeout(timer);
+    } else {
+      router.replace('/dashboard');
+    }
+  }, [countdown, router]);
+
   return (
-    <div className="flex flex-col min-h-screen bg-background text-foreground">
-      <header className="flex items-center justify-between p-4 border-b">
-        <Link href="/dashboard" passHref>
-          <Button variant="ghost" size="icon">
-            <ArrowLeft />
-          </Button>
-        </Link>
-        <h1 className="text-xl font-bold">Watch Ad</h1>
-        <div className="w-10"></div>
-      </header>
-      <main className="flex-grow p-4 md:p-8 flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle>Advertisement</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="aspect-video bg-muted rounded-md flex items-center justify-center">
-              <p className="text-muted-foreground">Ad content would be displayed here.</p>
-            </div>
-          </CardContent>
-        </Card>
-      </main>
+    <div className="flex items-center justify-center min-h-screen bg-background">
+      <Card className="mx-auto max-w-sm text-center">
+        <CardHeader>
+          <CardTitle>Please wait</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            <p className="text-muted-foreground">
+              You are being redirected...
+            </p>
+            <p className="text-2xl font-bold">{countdown}</p>
+            <p className="text-sm text-muted-foreground">
+              You will be returned to the dashboard automatically.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
