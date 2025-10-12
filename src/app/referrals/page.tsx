@@ -1,75 +1,102 @@
 
 'use client';
 
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import BottomNav from '@/components/bottom-nav';
+import { Users, X, Copy } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { ArrowLeft, Gift, Copy } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { onAuthStateChanged, type User } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function ReferralsPage() {
-    const { toast } = useToast();
-    const referralLink = "https://example.com/join?ref=USER123";
+  const { toast } = useToast();
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [referralLink, setReferralLink] = useState('');
+  const [fullReferralLink, setFullReferralLink] = useState('');
 
-    const copyToClipboard = () => {
-        navigator.clipboard.writeText(referralLink);
-        toast({
-            title: "Copied to clipboard!",
-            description: "Your referral link has been copied.",
-        });
-    };
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        const fullLink = `https://or-virid.vercel.app/app/inr-miner?ref=${currentUser.uid}`;
+        const displayLink = `inr-miner?ref=${currentUser.uid}`;
+        setFullReferralLink(fullLink);
+        setReferralLink(displayLink);
+      }
+      setIsLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+  
+  const handleCopy = () => {
+    if (!fullReferralLink) return;
+    navigator.clipboard.writeText(fullReferralLink);
+    toast({
+      title: 'Link Copied!',
+      description: 'Your referral link has been copied to your clipboard.',
+    });
+  };
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       <header className="flex items-center justify-between p-4 border-b">
-         <Link href="/dashboard" passHref>
-          <Button variant="ghost" size="icon">
-            <ArrowLeft />
-          </Button>
+        <h1 className="text-2xl font-bold">Referrals</h1>
+        <Link href="/dashboard">
+          <X className="h-6 w-6" />
         </Link>
-        <h1 className="text-xl font-bold">Referrals</h1>
-        <div className='w-10'></div>
       </header>
       <main className="flex-grow p-4 md:p-8">
-        <div className="max-w-md mx-auto space-y-6">
-            <Card className="text-center">
-                <CardHeader>
-                    <div className="mx-auto bg-primary/10 text-primary rounded-full p-3 w-fit">
-                        <Gift className="h-8 w-8" />
+        <Card className="max-w-md mx-auto">
+          <CardHeader>
+            <CardTitle>Invite Friends, Earn More</CardTitle>
+            <CardDescription>
+                Share your unique referral link with friends. You'll both benefit when they sign up!
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+                <div className="space-y-4">
+                    <Skeleton className="h-6 w-24" />
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                </div>
+            ) : user ? (
+                <div className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="referral-link">Your Referral Link</Label>
+                         <div className="flex gap-2">
+                            <Input id="referral-link" value={referralLink} readOnly />
+                            <Button size="icon" onClick={handleCopy}>
+                                <Copy className="h-4 w-4" />
+                            </Button>
+                        </div>
                     </div>
-                </CardHeader>
-                <CardContent>
-                    <CardTitle>Invite Friends, Earn Rewards</CardTitle>
-                    <CardDescription className="mt-2">
-                        Share your referral link with friends. When they sign up, you both get a bonus!
-                    </CardDescription>
-                </CardContent>
-            </Card>
-
-             <Card>
-                <CardHeader>
-                    <CardTitle>Your Referral Link</CardTitle>
-                </CardHeader>
-                <CardContent>
-                     <div className="relative">
-                        <Label htmlFor="referral-link" className="sr-only">Referral Link</Label>
-                        <Input id="referral-link" value={referralLink} readOnly />
-                        <Button
-                            size="icon"
-                            variant="ghost"
-                            className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
-                            onClick={copyToClipboard}
-                        >
-                            <Copy className="h-4 w-4" />
-                        </Button>
-                     </div>
-                </CardContent>
-            </Card>
-
-        </div>
+                    <div className="text-center">
+                        <p className="text-sm text-muted-foreground mt-6">
+                            Start sharing and watch your earnings grow!
+                        </p>
+                        <Users className="w-16 h-16 text-primary mx-auto mt-4" />
+                    </div>
+                </div>
+            ) : (
+                 <div className="text-center py-8">
+                    <p className="text-muted-foreground mb-4">Please log in to get your referral link.</p>
+                    <Button asChild>
+                        <Link href="/login">Login</Link>
+                    </Button>
+                </div>
+            )}
+          </CardContent>
+        </Card>
       </main>
+      <BottomNav />
     </div>
   );
 }
