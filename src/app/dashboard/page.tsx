@@ -3,8 +3,10 @@ import { CryptoDashboard } from '@/components/crypto-dashboard';
 
 export default function DashboardPage() {
   return (
-    <UserDataProvider>
-      <CryptoDashboard />
-    </UserDataProvider>
+    <main>
+      <UserDataProvider>
+        <CryptoDashboard />
+      </UserDataProvider>
+    </main>
   );
 }
