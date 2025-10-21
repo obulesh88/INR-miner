@@ -9,17 +9,6 @@ module.exports = {
         userAgent: "*",
         allow: "/",
       },
-      {
-        userAgent: "*",
-        disallow: [
-            "/login",
-            "/signup",
-            "/dashboard",
-            "/wallet",
-            "/referrals",
-            "/ad",
-        ],
-      },
     ],
   },
 };
