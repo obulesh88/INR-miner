@@ -22,7 +22,7 @@ import {
 
 
 const AD_EARNING_INCREASE = 0.004;
-const MAX_ADS_WATCHED = 44;
+const MAX_ADS_WATCHED = 100;
 
 export default function ProgressDisplay() {
   const { toast } = useToast();
