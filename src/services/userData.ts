@@ -16,6 +16,7 @@ export interface UserData {
   adsWatched: number;
   lastAdResetDate: string | null;
   withdrawals: Withdrawal[];
+  lastAdWatchedTimestamp: number | null;
 }
 
 const getCurrentUser = (): User => {

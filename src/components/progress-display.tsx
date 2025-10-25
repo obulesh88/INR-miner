@@ -1,11 +1,11 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { Video, Loader2 } from 'lucide-react';
+import { Video, Loader2, Hourglass } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { useUserData } from '@/contexts/user-data-context';
@@ -20,9 +20,10 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
-
 const AD_EARNING_INCREASE = 0.004;
 const MAX_ADS_WATCHED = 100;
+const ADS_MILESTONE = 25;
+const COOLDOWN_HOURS = 1;
 
 export default function ProgressDisplay() {
   const { toast } = useToast();
@@ -31,11 +32,55 @@ export default function ProgressDisplay() {
 
   const [isAdLoading, setIsAdLoading] = useState(false);
   const [showAdConfirmation, setShowAdConfirmation] = useState(false);
+  const [cooldownTime, setCooldownTime] = useState('');
+
+  const adsWatched = userData?.adsWatched ?? 0;
+  const lastAdWatchedTimestamp = userData?.lastAdWatchedTimestamp ?? 0;
+
+  const isCooldownActive =
+    adsWatched > 0 &&
+    adsWatched % ADS_MILESTONE === 0 &&
+    lastAdWatchedTimestamp &&
+    Date.now() - lastAdWatchedTimestamp < COOLDOWN_HOURS * 60 * 60 * 1000;
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout | undefined;
+    if (isCooldownActive) {
+      const updateCountdown = () => {
+        const now = Date.now();
+        const endTime = lastAdWatchedTimestamp + COOLDOWN_HOURS * 60 * 60 * 1000;
+        const timeLeft = endTime - now;
+
+        if (timeLeft <= 0) {
+          setCooldownTime('');
+          clearInterval(interval);
+          return;
+        }
+        const minutes = Math.floor((timeLeft / (1000 * 60)) % 60);
+        const seconds = Math.floor((timeLeft / 1000) % 60);
+        setCooldownTime(
+          `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+        );
+      };
+      updateCountdown();
+      interval = setInterval(updateCountdown, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isCooldownActive, lastAdWatchedTimestamp]);
 
   const handleWatchAdClick = () => {
     if (!user) {
       router.push('/login');
       return;
+    }
+
+    if (isCooldownActive) {
+        toast({
+            variant: 'destructive',
+            title: 'Cooldown Period',
+            description: `You must wait ${cooldownTime} before watching another ad.`,
+        });
+        return;
     }
 
     if (!userData || userData.adsWatched >= MAX_ADS_WATCHED) {
@@ -48,10 +93,13 @@ export default function ProgressDisplay() {
     }
 
     // Open the ad link in a new tab
-    window.open('https://enviousgarbage.com/b/3-Vk0.Ph3HpHv/bfmUVNJ_ZtDF0P2tN/jZISzUMtTPg_3tLmTzYv2XMWjBM/xROPD/gn', '_blank');
+    window.open(
+      'https://enviousgarbage.com/b/3-Vk0.Ph3HpHv/bfmUVNJ_ZtDF0P2tN/jZISzUMtTPg_3tLmTzYv2XMWjBM/xROPD/gn',
+      '_blank'
+    );
     setShowAdConfirmation(true);
   };
-  
+
   const handleConfirmAdWatched = async () => {
     setShowAdConfirmation(false);
     if (!user || !userData) return;
@@ -65,6 +113,7 @@ export default function ProgressDisplay() {
       await updateUserData({
         earnings: newEarnings,
         adsWatched: newAdsWatched,
+        lastAdWatchedTimestamp: Date.now(),
       });
 
       toast({
@@ -84,8 +133,12 @@ export default function ProgressDisplay() {
     }
   };
 
-
-  const adsWatched = userData?.adsWatched ?? 0;
+  const buttonText = () => {
+    if (isAdLoading) return 'Processing...';
+    if (isCooldownActive) return `Wait ${cooldownTime}`;
+    if (adsWatched >= MAX_ADS_WATCHED) return 'Ad Limit Reached';
+    return 'Watch Ad to Earn';
+  }
 
   return (
     <>
@@ -113,18 +166,16 @@ export default function ProgressDisplay() {
           <div className="flex flex-col gap-3 mt-6">
             <Button
               onClick={handleWatchAdClick}
-              disabled={adsWatched >= MAX_ADS_WATCHED || isAdLoading}
+              disabled={adsWatched >= MAX_ADS_WATCHED || isAdLoading || isCooldownActive}
             >
               {isAdLoading ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : isCooldownActive ? (
+                <Hourglass className="mr-2 h-4 w-4" />
               ) : (
                 <Video className="mr-2 h-4 w-4" />
               )}
-              {isAdLoading
-                ? 'Processing...'
-                : adsWatched >= MAX_ADS_WATCHED
-                ? 'Ad Limit Reached'
-                : 'Watch Ad to Earn'}
+              {buttonText()}
             </Button>
           </div>
         </CardContent>

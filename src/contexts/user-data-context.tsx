@@ -23,6 +23,7 @@ const initialUserData: UserData = {
   adsWatched: 0,
   lastAdResetDate: null,
   withdrawals: [],
+  lastAdWatchedTimestamp: null,
 };
 
 interface UserDataContextType {
